@@ -30,14 +30,14 @@ pub struct Shot {
 
 impl Shot {
     fn update(&mut self) {
-        self.y -= 3;
+        self.y -= 5;
     }
 }
 
 #[derive(Copy, Clone, Message, Default, Serialize, Deserialize)]
 #[rtype(result = "()")]
 pub struct Asteroid {
-    health:u8, //Health refers to how many hits it can take. Asteroids start at 1, planets at 2, suns at 3
+    pub health:u8, //Health refers to how many hits it can take. Asteroids start at 1, planets at 2, suns at 3
     x:i32,
     y:i32,
     radius:i32,
@@ -52,6 +52,16 @@ impl Asteroid {
             self.x = rng.gen_range(0, WIDTH);
             self.y = rng.gen_range(-300, 0);
             self.radius = rng.gen_range(WIDTH/25, WIDTH/7);
+        }
+    }
+
+    fn assign_health(&mut self) {
+        if self.radius > WIDTH/7 {
+            self.health = 3;
+        }else if self.radius > WIDTH/9 {
+            self.health = 2;
+        }else {
+            self.health = 1;
         }
     }
 }
@@ -85,29 +95,43 @@ impl GameState {
         for i in 0..self.shots.len() {
             self.shots[i].update();
         }
-        self.collisions();
+        if self.score % 10 == 0 {
+            self.collisions();
+        }
     }
+    //Finds the distance between two points. (For object collision)
+    fn distance(&mut self, x1:i32,y1:i32,x2:i32,y2:i32) -> i32{
+        return (((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1)) as f64).sqrt() as i32;
+    }
+
     fn collisions(&mut self){
         let mut rng = rand::thread_rng();
         for i in 0..self.asteroids.len() {
-            // let mut delete_index:usize = 69;
-            // for j in 0..self.shots.len() {
-            //     if self.shots[j].x == self.asteroids[i].x && self.shots[j].y == self.asteroids[i].y {
-            //         self.asteroids[i].x = rng.gen_range(0, WIDTH);
-            //         self.asteroids[i].y = rng.gen_range(-300, 0);
+            let mut delete_index = vec!();
+            for j in 0..self.shots.len() {
+                // if self.shots[j].x == self.asteroids[i].x && self.shots[j].y == self.asteroids[i].y {
+                if self.distance(self.shots[j].x, self.shots[j].y, self.asteroids[i].x, self.asteroids[i].y) <= self.asteroids[i].radius/2 {
+                    if self.asteroids[i].health > 1 {
+                        self.asteroids[i].health -= 1;
+                    }else {
+                        self.asteroids[i].x = rng.gen_range(0, WIDTH);
+                        self.asteroids[i].y = rng.gen_range(-300, 0);
+                        self.asteroids[i].radius = rng.gen_range(WIDTH/25, WIDTH/7);
+                        self.asteroids[i].assign_health();
+                    }
 
-            //         //Delete shot in the future, for now just move it high up
-            //         //To delete create an array of destroyed indexes, than loop backwards deleting them from vector
-            //         self.shots[j].y = -1*HEIGHT;
-            //         delete_index = j;
-            //     }else if self.shots[j].y > HEIGHT {
-            //         delete_index = j;
-            //     }
-            // } 
-            // //Only deletes one shot per iteration. We check often enough to delete all of the shots. This way is more efficient for speed
-            // if delete_index != 69 {
-            //     self.shots.remove(delete_index);
-            // }
+                    delete_index.push(j);
+                }else if self.shots[j].y < -50 {
+                    delete_index.push(j);
+                }
+            } 
+            //Deletes in reverse order as to not fuck up the indexes
+            let mut idx = delete_index.len();
+            while idx > 0 {
+                idx -= 1;
+                println!("Deleting shot :{}", delete_index[idx]);
+                self.shots.remove(delete_index[idx]);
+            }
             for (_id, rocket) in self.rockets.iter() {
                 if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].radius && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius {
                     //Collision detected, return false for game is over

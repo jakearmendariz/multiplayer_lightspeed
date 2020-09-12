@@ -24,16 +24,6 @@ async fn main() -> std::io::Result<()> {
 
     let addr = "127.0.0.1:8080";
 
-    // Shareable and distributable gamestate
-    // let game_state = Arc::new(lightspeed::GameState {
-    //     score:0,
-    //     user_count:0,
-    //     rockets:HashMap::new(),
-    //     shots:Vec::new(),
-    //     asteroids:Vec::new(),
-    //     screen:0
-    // });
-
     let srv = HttpServer::new(move || {
         App::new()
             .service(web::resource("/ws/").to(chat_route))

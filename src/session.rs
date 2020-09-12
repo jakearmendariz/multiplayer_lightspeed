@@ -169,9 +169,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                         }
 
                         Some("/rocket") => {
-                            println!("Rocket");
                             if let Some(browser_id) = command.next() {
-                                println!("{}", browser_id);
                                 let rocket_json: LightspeedConnection = match serde_json::from_str(browser_id) {
                                     Ok(connection) => connection,
                                     Err(e) => {
@@ -195,7 +193,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                             }
                         }
                         Some("/shot") => {
-                            println!("shot fired! {}", msg);
                             if let Some(browser_id) = command.next() {
                                 let shot_json: LightspeedConnection = match serde_json::from_str(browser_id) {
                                     Ok(connection) => connection,
@@ -217,19 +214,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                             
                         }
                         Some("/state") => {
-                            println!("/state");
                             WsChatServer::from_registry().send(GetGame("".to_string())).into_actor(self).then(move |res, _, ctx| {
                                 if let Ok(state) = res {
-                                    println!("session.rs: state {}", state);
                                     ctx.text(state)
                                 }
                                 fut::ready(())
                             }).wait(ctx);           
 
-                            println!("sending state to clients");
                         }
                         Some("/connection") => {
-                            println!("connection to lightspeed");
+                            println!("new connection to lightspeed");
                             if let Some(browser_id) = command.next() {
                                 println!("{}", browser_id);
                                 let connection: LightspeedConnection = match serde_json::from_str(browser_id) {

@@ -33,12 +33,15 @@ impl WsChatServer {
     }
 
     fn run_game(&mut self) {
-        let mut pool = Pool::new(4);
+        let mut pool = Pool::new(1);
         pool.scoped(|scope| {
             loop {
                 println!("running game... {}", self.game_state.to_json_string());
                 self.game_state.update();
-                thread::sleep(Duration::from_millis(1000));
+                thread::sleep(Duration::from_millis(100));
+                if ! self.game_state.is_playing() {
+                    break;
+                }
             }
         });
     }
@@ -144,12 +147,9 @@ impl Handler<Rocket> for WsChatServer {
             println!("Starting game\n\n\n");
             self.game_state.build();
             // self.run_game();
-        }else {
-            println!("Num players = {}\n\n\n", self.game_state.num_players());
         }
-        println!("server.rs: rocket");
         self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
-        println!("Updated rocket {} to ({}, {})", rocket.id, rocket.x, rocket.y);
+        // println!("Updated rocket {} to ({}, {})", rocket.id, rocket.x, rocket.y);
     }
 }
 
@@ -157,7 +157,6 @@ impl Handler<Shot> for WsChatServer {
     type Result = ();
 
     fn handle(&mut self, shot: Shot, _ctx: &mut Self::Context) {
-        println!("server.rs: shot");
         self.game_state.shots.push(shot);
         println!("Added shot {} to ({}, {})", self.game_state.shots.len(), shot.x, shot.y);
     }
@@ -169,7 +168,7 @@ impl Handler<GetGame> for WsChatServer {
     fn handle(&mut self, _state: GetGame, _ctx: &mut Self::Context) -> Self::Result{
         self.game_state.update();
         let state = self.game_state.to_json_string();
-        println!("server.rs: Game State: {}", state);
+        // println!("server.rs: Game State: {}", state);
         MessageResult(state)
     }
 }

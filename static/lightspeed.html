@@ -108,7 +108,7 @@ setup = function() {
   xPos = 0.5 * width - aWidth / 2;
   yPos = 0.8 * height - aHeight;
   speedInc = 0.0035 * ave;
-  gameSpeed = 0.01 * ave;
+  gameSpeed = 0.015 * ave;
   //Rocket Shots
   starsX = [];
   starsY = [];
@@ -582,12 +582,12 @@ draw = function() {
     updateRocket();
     // updateObjects();
     displayBullets();
-    updateBullets();
+    // updateBullets();
     drawRocket(xPos, yPos);
     drawOtherRockets();
     // drawAllRockets();
     drawObjects();
-    intersection();
+    // intersection();
     textSize(width * 0.03);
     fill(255, 0, 0);
     text(counter, 0.9 * width, 0.08 * height);
