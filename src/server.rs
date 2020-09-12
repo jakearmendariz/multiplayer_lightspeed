@@ -9,7 +9,7 @@ use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, G
 type Client = Recipient<ChatMessage>;
 type Room = HashMap<usize, Client>;
 use std::thread;
-use crate::lightspeed::{GameState, Rocket};
+use crate::lightspeed::{GameState, Rocket, Shot};
 // use std::fs::File;
 // use std::io::prelude::*;
 
@@ -150,6 +150,16 @@ impl Handler<Rocket> for WsChatServer {
         println!("server.rs: rocket");
         self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
         println!("Updated rocket {} to ({}, {})", rocket.id, rocket.x, rocket.y);
+    }
+}
+
+impl Handler<Shot> for WsChatServer {
+    type Result = ();
+
+    fn handle(&mut self, shot: Shot, _ctx: &mut Self::Context) {
+        println!("server.rs: shot");
+        self.game_state.shots.push(shot);
+        println!("Added shot {} to ({}, {})", self.game_state.shots.len(), shot.x, shot.y);
     }
 }
 

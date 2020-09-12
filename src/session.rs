@@ -14,7 +14,7 @@ use std::io::prelude::*;
 
 use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame};
 use crate::server::WsChatServer;
-use crate::lightspeed::{GameState, Rocket};
+use crate::lightspeed::{GameState, Rocket, Shot};
 
 
 #[derive(Default)]
@@ -175,7 +175,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                 let rocket_json: LightspeedConnection = match serde_json::from_str(browser_id) {
                                     Ok(connection) => connection,
                                     Err(e) => {
-                                        println!("Error: could not parse connection {}", e);
+                                        println!("Error: could not parse /rocket connection {}", e);
                                         return;
                                     }
                                 };
@@ -195,7 +195,26 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                             }
                         }
                         Some("/shot") => {
-                            println!("shot fired!");
+                            println!("shot fired! {}", msg);
+                            if let Some(browser_id) = command.next() {
+                                let shot_json: LightspeedConnection = match serde_json::from_str(browser_id) {
+                                    Ok(connection) => connection,
+                                    Err(e) => {
+                                        println!("Error: could not parse /shot connection {}", e);
+                                        return;
+                                    }
+                                };
+                                //New shot fired
+                                let shot = Shot {
+                                    x:shot_json.x,
+                                    y:shot_json.y,
+                                };
+                                //Sends updated rocket position
+                                WsChatServer::from_registry().send(shot).into_actor(self).then(|res, _, ctx| {
+                                    fut::ready(())
+                                }).wait(ctx);
+                            }
+                            
                         }
                         Some("/state") => {
                             println!("/state");

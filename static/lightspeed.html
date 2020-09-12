@@ -75,6 +75,7 @@ function connect() {
         counter = game_state["score"];
         spaceObjects = game_state["asteroids"];
         rockets = game_state["rockets"];
+        bullets = game_state["shots"];
     }
 
     socket.onclose = () => {
@@ -322,12 +323,12 @@ var drawOtherRockets = function() {
 }
 
 var addShot = function() {
-  let _x = xPos + aWidth / 2;
-  let _y = yPos - aHeight * (1 / 2);
+  let _x = round(xPos + aWidth / 2);
+  let _y = round(yPos - aHeight * (1 / 2));
   var b = new bullet(_x, _y);
   bullets.push(b);
 
-  socket.send(`/shot {"x":${_x}, "y":${_y}}`)
+  socket.send(`/shot {"browser_id":${browserId},"x":${_x}, "y":${_y}}`)
 };
 
 var displayBullets = function() {

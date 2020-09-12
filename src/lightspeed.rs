@@ -24,13 +24,13 @@ impl Rocket {
 #[derive(Copy, Clone, Message, Default, Serialize, Deserialize)]
 #[rtype(result = "()")]
 pub struct Shot {
-    x:i32,
-    y:i32
+    pub x:i32,
+    pub y:i32
 }
 
 impl Shot {
     fn update(&mut self) {
-        self.y -= 1;
+        self.y -= 3;
     }
 }
 
@@ -90,15 +90,24 @@ impl GameState {
     fn collisions(&mut self){
         let mut rng = rand::thread_rng();
         for i in 0..self.asteroids.len() {
-            
-            for j in 0..self.shots.len() {
-                self.asteroids[i].x = rng.gen_range(0, WIDTH);
-                self.asteroids[i].y = rng.gen_range(-300, 0);
+            // let mut delete_index:usize = 69;
+            // for j in 0..self.shots.len() {
+            //     if self.shots[j].x == self.asteroids[i].x && self.shots[j].y == self.asteroids[i].y {
+            //         self.asteroids[i].x = rng.gen_range(0, WIDTH);
+            //         self.asteroids[i].y = rng.gen_range(-300, 0);
 
-                //Delete shot in the future, for now just move it high up
-                //To delete create an array of destroyed indexes, than loop backwards deleting them from vector
-                self.shots[j].y = -1*HEIGHT
-            } 
+            //         //Delete shot in the future, for now just move it high up
+            //         //To delete create an array of destroyed indexes, than loop backwards deleting them from vector
+            //         self.shots[j].y = -1*HEIGHT;
+            //         delete_index = j;
+            //     }else if self.shots[j].y > HEIGHT {
+            //         delete_index = j;
+            //     }
+            // } 
+            // //Only deletes one shot per iteration. We check often enough to delete all of the shots. This way is more efficient for speed
+            // if delete_index != 69 {
+            //     self.shots.remove(delete_index);
+            // }
             for (_id, rocket) in self.rockets.iter() {
                 if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].radius && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius {
                     //Collision detected, return false for game is over
