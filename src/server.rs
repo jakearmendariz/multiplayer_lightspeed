@@ -4,7 +4,7 @@ use actix_broker::BrokerSubscribe;
 use std::collections::HashMap;
 use std::mem;
 
-use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame};
+use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame, RemovePlayer};
 
 type Client = Recipient<ChatMessage>;
 type Room = HashMap<usize, Client>;
@@ -34,7 +34,7 @@ impl WsChatServer {
 
     fn run_game(&mut self) {
         let mut pool = Pool::new(1);
-        pool.scoped(|scope| {
+        pool.scoped(|_scope| {
             loop {
                 println!("running game... {}", self.game_state.to_json_string());
                 self.game_state.update();
@@ -149,19 +149,19 @@ impl Handler<Rocket> for WsChatServer {
             // self.run_game();
         }
         self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
-        // println!("Updated rocket {} to ({}, {})", rocket.id, rocket.x, rocket.y);
     }
 }
 
+//Adds a shot to gamestate
 impl Handler<Shot> for WsChatServer {
     type Result = ();
 
     fn handle(&mut self, shot: Shot, _ctx: &mut Self::Context) {
         self.game_state.shots.push(shot);
-        println!("Added shot {} to ({}, {})", self.game_state.shots.len(), shot.x, shot.y);
     }
 }
 
+//Returns the game state to be distributed to clients
 impl Handler<GetGame> for WsChatServer {
     type Result = MessageResult<GetGame>;
 
@@ -170,6 +170,16 @@ impl Handler<GetGame> for WsChatServer {
         let state = self.game_state.to_json_string();
         // println!("server.rs: Game State: {}", state);
         MessageResult(state)
+    }
+}
+
+//Removes from game_state after disconnection
+impl Handler<RemovePlayer> for WsChatServer {
+    type Result = ();
+
+    fn handle(&mut self, player_to_remove: RemovePlayer, _ctx: &mut Self::Context) -> Self::Result{
+        println!("server.rs removed player from game");
+        self.game_state.rockets.remove(&player_to_remove.id);
     }
 }
 

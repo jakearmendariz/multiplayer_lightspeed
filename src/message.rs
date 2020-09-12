@@ -23,3 +23,10 @@ pub struct SendMessage(pub String, pub usize, pub String);
 #[derive(Clone, Message)]
 #[rtype(result = "String")]
 pub struct GetGame(pub String);
+
+#[derive(Clone, Message)]
+#[rtype(result = "()")]
+pub struct RemovePlayer {
+    pub id:usize
+}
+

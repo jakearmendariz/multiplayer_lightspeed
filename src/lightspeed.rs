@@ -119,7 +119,7 @@ impl GameState {
                         self.asteroids[i].radius = rng.gen_range(WIDTH/25, WIDTH/7);
                         self.asteroids[i].assign_health();
                     }
-
+                    println!("collision");
                     delete_index.push(j);
                 }else if self.shots[j].y < -50 {
                     delete_index.push(j);
@@ -129,14 +129,13 @@ impl GameState {
             let mut idx = delete_index.len();
             while idx > 0 {
                 idx -= 1;
-                println!("Deleting shot :{}", delete_index[idx]);
                 self.shots.remove(delete_index[idx]);
             }
             for (_id, rocket) in self.rockets.iter() {
                 if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].radius && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius {
                     //Collision detected, return false for game is over
                     self.screen = END;
-                    println!("END GAME")
+                    // println!("END GAME")
                 }
             }
         }
@@ -166,23 +165,11 @@ impl GameState {
         self.screen = PLAY;
     }
 
-    pub fn add_player(&mut self, id:usize, width:i32, height:i32){
-        let rocket:Rocket = Rocket {
-            x:width/2,
-            y:height*3/4,
-            id:id,
-
-            width:width,
-            height:height
-        };
-        self.rockets.insert(id, rocket);
-    }
-
     pub fn num_players(&self) -> usize{
         self.rockets.len()
     }
 
-    fn shoot(&mut self, id:usize){
+    fn _shoot(&mut self, id:usize){
         let from_rocket:Rocket = match self.rockets.get(&id) {
             Some(&rocket) => rocket,
             _ => return
@@ -194,7 +181,7 @@ impl GameState {
         self.shots.push(shot);
     }
 
-    pub fn print_state(&self) {
+    pub fn _print_state(&self) {
         println!("Rockets:");
         for (id, _rocket) in self.rockets.iter() {
             println!("{}", id);

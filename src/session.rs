@@ -1,4 +1,4 @@
-use log::{debug, info};
+use log::{info};
 
 use actix::fut;
 use actix::prelude::*;
@@ -7,14 +7,9 @@ use actix_web_actors::ws;
 
 use serde::{Deserialize, Serialize};
 
-// mod lightspeed;
-// use std::rc::Rc;
-use std::fs::File;
-use std::io::prelude::*;
-
-use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame};
+use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame, RemovePlayer};
 use crate::server::WsChatServer;
-use crate::lightspeed::{GameState, Rocket, Shot};
+use crate::lightspeed::{Rocket, Shot};
 
 
 #[derive(Default)]
@@ -53,7 +48,6 @@ impl WsChatSession {
                     act.id = id;
                     act.room = room_name;
                 }
-
                 fut::ready(())
             })
             .wait(ctx);
@@ -83,13 +77,6 @@ impl WsChatSession {
         );
 
         let msg = SendMessage(self.room.clone(), self.id, content);
-
-        // issue_async comes from having the `BrokerIssue` trait in scope.
-        self.issue_system_async(msg);
-    }
-
-    pub fn send_data(&self, data: String) {
-        let msg = SendMessage(self.room.clone(), self.id, data);
 
         // issue_async comes from having the `BrokerIssue` trait in scope.
         self.issue_system_async(msg);
@@ -187,7 +174,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                     height:self.height
                                 };
                                 //Sends updated rocket position
-                                WsChatServer::from_registry().send(rocket).into_actor(self).then(|res, _, ctx| {
+                                WsChatServer::from_registry().send(rocket).into_actor(self).then(|_res, _, _ctx| {
                                     fut::ready(())
                                 }).wait(ctx);
                             }
@@ -207,7 +194,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                     y:shot_json.y,
                                 };
                                 //Sends updated rocket position
-                                WsChatServer::from_registry().send(shot).into_actor(self).then(|res, _, ctx| {
+                                WsChatServer::from_registry().send(shot).into_actor(self).then(|_res, _, _ctx| {
                                     fut::ready(())
                                 }).wait(ctx);
                             }
@@ -221,6 +208,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                 fut::ready(())
                             }).wait(ctx);           
 
+                        }
+                        Some("/disconnect") => {
+                            println!("Disconnect player to lightspeed");
+                            WsChatServer::from_registry().send(RemovePlayer { id:self.id } ).into_actor(self).then(move |_res, _, _ctx| {
+                                fut::ready(())
+                            }).wait(ctx);       
                         }
                         Some("/connection") => {
                             println!("new connection to lightspeed");
@@ -246,7 +239,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                     height:self.height
                                 };
                                 //Sends updated rocket position
-                                WsChatServer::from_registry().send(rocket).into_actor(self).then(|res, _, ctx| {
+                                WsChatServer::from_registry().send(rocket).into_actor(self).then(|_res, _, _ctx| {
                                     fut::ready(())
                                 }).wait(ctx);
                             } else {
@@ -262,7 +255,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                 self.send_msg(msg);
             }
             ws::Message::Close(reason) => {
-                ctx.close(reason);
+                println!("disconnect player to lightspeed\n\n");
+                WsChatServer::from_registry().send(RemovePlayer { id:self.id } ).into_actor(self).then(move |_res, _, _ctx| {
+                    fut::ready(())
+                }).wait(ctx);  
+                ctx.close(reason); 
                 ctx.stop();
             }
             _ => {}

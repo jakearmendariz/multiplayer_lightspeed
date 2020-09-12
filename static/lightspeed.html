@@ -22,31 +22,20 @@ var counter = 0;
 var gameStarted = false;
 
 var rockets = {}
-var xPos;
-var yPos;
-var aHeight;
-var aWidth;
+var xPos, yPos, aHeight, aWidth;
 var direction = 0;
-var explosion = false;
-var explosionSize;
+var explosion = false, explosionSize;
 var astDestroyed = 0;
 var hitCounter = [];
 var highScore = 0;
 //Increases difficulty
-var speedInc = 0.2;
-var gameSpeed = 0.2;
+var speedInc, gameSpeed;
 var canRestart = true;
-var bullets;
-var bullet;
-var spaceObjects = [];
-var ave;
+var bullets, bullet, spaceObjects = [];
 var bigFlame = true;
-var drawAsteroid;
-var drawEndingScreen;
-var starsX;
-var starsY;
-var keys;
-var moving = false;
+//View
+var drawAsteroid, drawEndingScreen;
+var starsX, starsY, keys, ave, moving = false;
 
 
 
@@ -79,6 +68,7 @@ function connect() {
     }
 
     socket.onclose = () => {
+        socket.send(`/disconnect {"browser_id":${browserId}, "x":${0}, "y":${0}}`)
         const $id_element = document.querySelector('#id')
         $id_element.innerHTML = 'disconnected'
         socket = null
@@ -87,7 +77,6 @@ function connect() {
 
 function disconnect() {
     if (socket) {
-        log('Disconnecting...')
         socket.close()
         socket = null
 
@@ -95,11 +84,15 @@ function disconnect() {
     }
 }
 
+window.onbeforeunload = function(){
+  disconnect();
+}
 //Where to add images and fonts
 function preload() {}
 setup = function() {
   keys = 1;
-  createCanvas(900, 900);
+  let canvas_size = Math.min(window.innerWidth, window.innerHeight);
+  createCanvas(canvas_size, canvas_size);
   background(0, 0, 0);
   ave = (width + height) / 2;
   explosionSize = 0.025 * height;
@@ -132,10 +125,7 @@ setup = function() {
       yPos = 0.9 * height - aHeight;
       counter = 0;
     }
-    if (keyCode === 32) {
-      addShot();
-    }
-    if (keyCode == 191) {
+    if (keyCode === 32 || keyCode == 191) {
       addShot();
     }
     if (keyCode === 37) {
@@ -235,81 +225,25 @@ var drawRocket = function(x, y) {
   rect(x + (aWidth * 2) / 3, y, (aWidth * 1) / 3, aHeight);
 
   fill(160, 1, 70);
-  triangle(
-    x,
-    y,
-    x + aWidth / 2,
-    y - aHeight * (7 / 16),
-    x + aWidth,
-    y
-  );
+  triangle(x,y,x + aWidth / 2,y - aHeight * (7 / 16),x + aWidth,y);
   ellipse(x + aWidth / 2, y + aHeight * 0.01, aWidth, aHeight * 0.2);
   fill(160 + 20, 1 + 20, 70 + 20);
-  triangle(
-    x,
-    y + aHeight,
-    x - aWidth / 2,
-    y + aHeight,
-    x,
-    y + aHeight / 4
-  );
+  triangle(x,y + aHeight,x - aWidth / 2,y + aHeight,x,y + aHeight / 4);
   fill(160, 1, 70);
-  triangle(
-    x + (3 / 2) * aWidth,
-    y + aHeight,
-    x + aWidth,
-    y + aHeight,
-    x + aWidth,
-    y + aHeight / 4
-  );
+  triangle(x + (3 / 2) * aWidth,y + aHeight,x + aWidth,y + aHeight,x + aWidth,y + aHeight / 4);
 
-  triangle(
-    x + aWidth / 3,
-    y + aHeight,
-    x + aWidth * (2 / 3),
-    y + aHeight,
-    x + aWidth / 2,
-    y + aHeight / 4
-  );
+  triangle(x + aWidth / 3,y + aHeight,x + aWidth * (2 / 3),y + aHeight,x + aWidth / 2,y + aHeight / 4);
 
   if (bigFlame) {
     fill(255, 100, 10);
-    triangle(
-      x,
-      y + aHeight,
-      x + aWidth,
-      y + aHeight,
-      x + aWidth / 2,
-      y + aHeight * (9 / 6)
-    );
+    triangle(x,y + aHeight,x + aWidth,y + aHeight,x + aWidth / 2,y + aHeight * (9 / 6));
     fill(210, 230, 0);
-    triangle(
-      x + aWidth / 4,
-      y + aHeight,
-      x + aWidth - aWidth / 4,
-      y + aHeight,
-      x + aWidth / 2,
-      y + aHeight * (8 / 6)
-    );
+    triangle(x + aWidth / 4,y + aHeight,x + aWidth - aWidth / 4,y + aHeight,x + aWidth / 2,y + aHeight * (8 / 6));
   } else {
     fill(255, 100, 10);
-    triangle(
-      x,
-      y + aHeight,
-      x + aWidth,
-      y + aHeight,
-      x + aWidth / 2,
-      y + aHeight * (11 / 6)
-    );
+    triangle(x,y + aHeight,x + aWidth,y + aHeight,x + aWidth / 2,y + aHeight * (11 / 6));
     fill(210, 230, 0);
-    triangle(
-      x + aWidth / 4,
-      y + aHeight,
-      x + aWidth - aWidth / 4,
-      y + aHeight,
-      x + aWidth / 2,
-      y + aHeight * (10 / 6)
-    );
+    triangle(x + aWidth / 4,y + aHeight,x + aWidth - aWidth / 4,y + aHeight,x + aWidth / 2,y + aHeight * (10 / 6));
   }
 };
 
@@ -337,117 +271,45 @@ var displayBullets = function() {
     rect(bullets[i].x, bullets[i].y, 0.0075 * height, aHeight / 5);
   }
 };
-//Move up continously unless they contact a asteroid
-var updateBullets = function() {
-  for (var i = 0; i < bullets.length; i++) {
-    bullets[i].y -= gameSpeed;
-  }
-};
 
 //Draws all asteroids at their updated positions. When destroyed they will be shot out of view
 var drawObjects = function() {
+  fill(65, 72, 163);
   for (var i = 0; i < spaceObjects.length; i++) {
-    if (spaceObjects[i].radius > width/7) {
-      fill(255, 238, 0);
-      drawSun(
-        spaceObjects[i].x,
+    ellipse(spaceObjects[i].x,
         spaceObjects[i].y,
-        spaceObjects[i].radius * 1.2,
-        50
-      );
-    } else if (spaceObjects[i].radius < width/9) {
-      fill(140, 138, 140);
-      drawAst(
-        spaceObjects[i].x,
-        spaceObjects[i].y,
-        spaceObjects[i].radius * 1.2,
-        50
-      );
-    } else {
-      fill(65, 72, 163);
-      drawPlanet(
-        spaceObjects[i].x,
-        spaceObjects[i].y,
-        spaceObjects[i].radius * 1.2,
-        50
-      );
-    }
-    /*
-        ellipse(
-          spaceObjects[i].x,
-          spaceObjects[i].y,
-          spaceObjects[i].size,
-          spaceObjects[i].size
-        );*/
+        spaceObjects[i].radius * 1.2);
 
-    fill(247, 244, 244);
-    textSize(12);
-    //text(i, spaceObjects[i].x, spaceObjects[i].y);
-  }
-};
-
-//Problem here
-var intersection = function() {
-  var place = -1;
-  var aPlace = -1;
-  var bigHit = false;
-  var hit = 0;
-  for (var i = 0; i < spaceObjects.length; i++) {
-    for (var j = 0; j < bullets.length; j++) {
-      var di = dist(
-        bullets[j].x,
-        bullets[j].y,
-        spaceObjects[i].x,
-        spaceObjects[i].y
-      );
-      if (di < spaceObjects[i].size / 2) {
-        hit++;
-        place = i;
-        aPlace = j;
-      }
-    }
-    hitCounter[i] += hit;
-    hit = 0;
-  }
-  //Depending on size it takes # of hits to destroy
-  if (place !== -1) {
-    if (spaceObjects[place].size < 0.1125 * width) {
-      spaceObjects[place].y = -75;
-      spaceObjects[place].x = random(0, width);
-      hitCounter[place] = 0;
-      astDestroyed++;
-    } else if (
-      hitCounter[place] >= 2 &&
-      spaceObjects[place].size < 0.1425 * width
-    ) {
-      spaceObjects[place].y = -75;
-      spaceObjects[place].x = random(0, width);
-      hitCounter[place] = 0;
-      astDestroyed++;
-    } else if (hitCounter[place] >= 3) {
-      spaceObjects[place].y = -75;
-      spaceObjects[place].x = random(0, width);
-      hitCounter[place] = 0;
-      astDestroyed++;
-    }
-    // print("before: " + bullets.length);
-    //This should be enough but sometimes it gets rid of all bullets
-    bullets.splice(aPlace, 1);
-    // println("after " + bullets.length);
-    counter += 20;
+    // if (spaceObjects[i].radius > width/7) {
+    //   fill(255, 238, 0);
+    //   drawSun(
+    //     spaceObjects[i].x,
+    //     spaceObjects[i].y,
+    //     spaceObjects[i].radius * 1.2,
+    //     50
+    //   );
+    // } else if (spaceObjects[i].radius < width/9) {
+    //   fill(140, 138, 140);
+    //   drawAst(
+    //     spaceObjects[i].x,
+    //     spaceObjects[i].y,
+    //     spaceObjects[i].radius * 1.2,
+    //     50
+    //   );
+    // } else {
+    //   fill(65, 72, 163);
+    //   drawPlanet(
+    //     spaceObjects[i].x,
+    //     spaceObjects[i].y,
+    //     spaceObjects[i].radius * 1.2,
+    //     50
+    //   );
+    // }
   }
 };
 
 //leftArrow = 37 //TopArrow = 38 //rightArrow = 39 //leftArrow = 40
 //= 0 north, 1= east, 2 = south, 3 = west
-
-drawAsteroid = function(x, y, w, h) {
-  stroke(2);
-  fill(140, 138, 140);
-  ellipse(x, y, w, h);
-  fill(80, 80, 80);
-  ellipse(x + w * 0.3, y + h * 0.3, w * 0.2, h * 0.2);
-};
 
 drawEndingScreen = function() {
   fill(255, 180, 0);
@@ -495,45 +357,6 @@ var updateRocket = function() {
   }
 };
 
-// var updateObjects = function() {
-//   for (var i = 0; i < spaceObjects.length; i++) {
-//     spaceObjects[i].y += spaceObjects[i].speed;
-//     if (spaceObjects[i].y > height * 1.15) {
-//       spaceObjects[i].y = -50;
-//       spaceObjects[i].x = random(0, width);
-//       spaceObjects[i].size += random(-10, 15);
-//     }
-//     if (spaceObjects[i].size < 0.0375 * width) {
-//       spaceObjects[i].size = 0.0375 * width;
-//     }
-//     var d = dist(
-//       xPos + aWidth / 2,
-//       yPos - aHeight / 2,
-//       spaceObjects[i].x,
-//       spaceObjects[i].y
-//     );
-//     if (
-//       (spaceObjects[i].x > xPos &&
-//         spaceObjects[i].x < xPos + 0.08 * width &&
-//         spaceObjects[i].y > yPos &&
-//         spaceObjects[i].y < yPos + 0.15 * height) ||
-//       d < spaceObjects[i].size / 2
-//     ) {
-//       explosion = true;
-//       startTime = millis();
-//     }
-//   }
-//   //Adds Asteroids to increase difficulty as program continues
-//   if (counter % 1000 === 0) {
-//     spaceObjects.push({
-//       x: random(1, width),
-//       y: random(-50, -150),
-//       size: random(0.0375 * width, 0.1 * width),
-//       speed: random(counter / 1000, counter / 1500 + 2) + speedInc
-//     });
-//   }
-// };
-
 var restart = function() {
   explosionSize = 10;
   explosion = false;
@@ -580,14 +403,10 @@ draw = function() {
     canRestart = false;
     counter++;
     updateRocket();
-    // updateObjects();
     displayBullets();
-    // updateBullets();
     drawRocket(xPos, yPos);
     drawOtherRockets();
-    // drawAllRockets();
     drawObjects();
-    // intersection();
     textSize(width * 0.03);
     fill(255, 0, 0);
     text(counter, 0.9 * width, 0.08 * height);
