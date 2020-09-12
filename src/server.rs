@@ -10,8 +10,8 @@ type Client = Recipient<ChatMessage>;
 type Room = HashMap<usize, Client>;
 use std::thread;
 use crate::lightspeed::{GameState, Rocket};
-use std::fs::File;
-use std::io::prelude::*;
+// use std::fs::File;
+// use std::io::prelude::*;
 
 extern crate scoped_threadpool;
 use scoped_threadpool::Pool;
@@ -30,30 +30,6 @@ impl WsChatServer {
         let room = self.rooms.get_mut(room_name)?;
         let room = mem::replace(room, HashMap::new());
         Some(room)
-    }
-
-    pub fn write_state(&mut self, state:String) -> std::io::Result<()>{
-        let mut file = File::create("state.txt")?;
-        println!("Writing \"{}\" to state.txt", state);
-        file.write_all(&state[..].as_bytes())?;
-        Ok(())
-    }
-
-    fn add_player(&mut self, id:usize, width:i32, height:i32) {
-        if self.game_state.num_players() == 0 {
-            self.game_state.build();
-            // self.run_game();
-        }else {
-            println!("Num players = {}\n\n\n", self.game_state.num_players());
-        }
-        self.game_state.add_player(id, width, height);
-        self.game_state.update();
-        self.game_state.print_state();
-    }
-
-    fn get_game_state(&mut self) -> String{
-        // self.game_state.update();
-        self.game_state.to_json_string()
     }
 
     fn run_game(&mut self) {
@@ -165,7 +141,7 @@ impl Handler<Rocket> for WsChatServer {
 
     fn handle(&mut self, rocket: Rocket, _ctx: &mut Self::Context) {
         if self.game_state.num_players() == 0 {
-            println!("BEGINING TO RUN GAME\n\n\n");
+            println!("Starting game\n\n\n");
             self.game_state.build();
             // self.run_game();
         }else {
@@ -181,13 +157,10 @@ impl Handler<GetGame> for WsChatServer {
     type Result = MessageResult<GetGame>;
 
     fn handle(&mut self, _state: GetGame, _ctx: &mut Self::Context) -> Self::Result{
-        println!("server.rs: getgame");
-        println!("GetGame: {}", self.game_state.to_json_string());
-        match self.write_state(self.game_state.to_json_string()) {
-            Ok(ok) => println!("Succesfully wrote the data"),
-            Err(e) => println!("Error writing state: {}", e)
-        };
-        MessageResult(self.game_state.to_json_string())
+        self.game_state.update();
+        let state = self.game_state.to_json_string();
+        println!("server.rs: Game State: {}", state);
+        MessageResult(state)
     }
 }
 

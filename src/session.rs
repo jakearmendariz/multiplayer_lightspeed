@@ -22,8 +22,8 @@ pub struct WsChatSession {
     id: usize,
     room: String,
     name: Option<String>,
-    game_state: GameState,
-    data:String
+    width:i32,
+    height:i32
 
 }
 
@@ -75,30 +75,6 @@ impl WsChatSession {
             .wait(ctx);
     }
 
-    // pub fn get_game_state(&mut self, ctx: &mut ws::WebsocketContext<Self>) -> String {
-    //     // let mut data = Vec::new();
-    //     // data.push("".to_string());
-    //     WsChatServer::from_registry().send(GetGame("".to_string())).into_actor(self).then(|res, _, ctx| {
-    //         if let Ok(state) = res {
-    //             println!("session.rs: state {}", state);
-    //             self.data = state.clone();
-    //         }
-    //         fut::ready(())
-    //     }).wait(ctx);
-    //     // let state = data.pop().unwrap();
-    //     return self.data
-    // }
-
-    pub fn read_state(&mut self) -> std::io::Result<()>{
-        let mut file = File::open("state.txt")?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-        println!("state contents: {}", contents);
-        self.send_data(contents);
-        Ok(())
-    }
-
-
     pub fn send_msg(&self, msg: &str) {
         let content = format!(
             "{}: {}",
@@ -117,13 +93,6 @@ impl WsChatSession {
 
         // issue_async comes from having the `BrokerIssue` trait in scope.
         self.issue_system_async(msg);
-    }
-
-    pub fn update_game(&mut self) {
-        
-        while self.game_state.is_playing() {
-            self.game_state.update();
-        }
     }
 }
    
@@ -156,8 +125,8 @@ impl Handler<ChatMessage> for WsChatSession {
 #[derive(Serialize, Deserialize)]
 struct LightspeedConnection {
     browser_id:usize,
-    width:i32,
-    height:i32
+    x:i32,
+    y:i32
 }
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
@@ -173,15 +142,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
             }
             Ok(msg) => msg,
         };
-
-        debug!("WEBSOCKET MESSAGE: {:?}", msg);
-        println!("WEBSOCKET MESSAGE: {:?}", msg);
         match msg {
             ws::Message::Text(text) => {
                 let msg = text.trim();
-
-                println!("msg text.trim: {:?}", msg);
-
                 if msg.starts_with('/') {
                     let mut command = msg.splitn(2, ' ');
 
@@ -205,6 +168,47 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                             }
                         }
 
+                        Some("/rocket") => {
+                            println!("Rocket");
+                            if let Some(browser_id) = command.next() {
+                                println!("{}", browser_id);
+                                let rocket_json: LightspeedConnection = match serde_json::from_str(browser_id) {
+                                    Ok(connection) => connection,
+                                    Err(e) => {
+                                        println!("Error: could not parse connection {}", e);
+                                        return;
+                                    }
+                                };
+                                //Current session's rocket
+                                let rocket = Rocket {
+                                    id:self.id,
+                                    x:rocket_json.x,
+                                    y:rocket_json.y,
+
+                                    width:self.width,
+                                    height:self.height
+                                };
+                                //Sends updated rocket position
+                                WsChatServer::from_registry().send(rocket).into_actor(self).then(|res, _, ctx| {
+                                    fut::ready(())
+                                }).wait(ctx);
+                            }
+                        }
+                        Some("/shot") => {
+                            println!("shot fired!");
+                        }
+                        Some("/state") => {
+                            println!("/state");
+                            WsChatServer::from_registry().send(GetGame("".to_string())).into_actor(self).then(move |res, _, ctx| {
+                                if let Ok(state) = res {
+                                    println!("session.rs: state {}", state);
+                                    ctx.text(state)
+                                }
+                                fut::ready(())
+                            }).wait(ctx);           
+
+                            println!("sending state to clients");
+                        }
                         Some("/connection") => {
                             println!("connection to lightspeed");
                             if let Some(browser_id) = command.next() {
@@ -216,37 +220,22 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                         return;
                                     }
                                 };
-                                //TODO: Only create game state if it hasn't been built already
                                 self.id = connection.browser_id;
-                                self.game_state.build();
+                                self.width = connection.x;
+                                self.height = connection.y;
+                                //Current session's rocket
                                 let rocket = Rocket {
                                     id:self.id,
-                                    x:connection.width/2,
-                                    y:connection.height*3/4,
+                                    x:connection.x/2,
+                                    y:connection.y*3/4,
 
-                                    width:connection.width,
-                                    height:connection.height
+                                    width:self.width,
+                                    height:self.height
                                 };
+                                //Sends updated rocket position
                                 WsChatServer::from_registry().send(rocket).into_actor(self).then(|res, _, ctx| {
-                    
                                     fut::ready(())
                                 }).wait(ctx);
-                                // self.game_state.add_player(self.id, connection.width, connection.height);
-                                // self.game_state.print_state();
-                                
-                                // let mut data:String = self.get_game_state(ctx);
-                                WsChatServer::from_registry().send(GetGame("".to_string())).into_actor(self).then(move |res, _, _ctx| {
-                                    if let Ok(state) = res {
-                                        println!("session.rs: state {}", state);
-                                    }
-                                    fut::ready(())
-                                }).wait(ctx);           
-
-                                match self.read_state() {
-                                    Ok(ok) => println!("Succesfully read the data"),
-                                    Err(e) => println!("Error reading state: {}", e)
-                                };
-                                println!("sending data to client");
                             } else {
                                 println!("Connection needs id!")
                             }

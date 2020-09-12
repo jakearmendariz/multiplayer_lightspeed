@@ -17,6 +17,39 @@ var canvas_size = Math.min([window.innerWidth, window.innerHeight]);
 
 var socket = null
 
+var startTime = 0;
+var counter = 0;
+var gameStarted = false;
+
+var rockets = {}
+var xPos;
+var yPos;
+var aHeight;
+var aWidth;
+var direction = 0;
+var explosion = false;
+var explosionSize;
+var astDestroyed = 0;
+var hitCounter = [];
+var highScore = 0;
+//Increases difficulty
+var speedInc = 0.2;
+var gameSpeed = 0.2;
+var canRestart = true;
+var bullets;
+var bullet;
+var spaceObjects = [];
+var ave;
+var bigFlame = true;
+var drawAsteroid;
+var drawEndingScreen;
+var starsX;
+var starsY;
+var keys;
+var moving = false;
+
+
+
 function connect() {
     disconnect()
 
@@ -33,11 +66,15 @@ function connect() {
         $id_element.innerHTML = 'id=' + browserId
         //console.log("Window width" + window.innerWidth + " " + window.innerHeight)
         canvas_size = Math.min(window.innerWidth, window.innerHeight);
-        socket.send(`/connection {"browser_id":${browserId}, "width":${canvas_size}, "height":${canvas_size}}`)
+        socket.send(`/connection {"browser_id":${browserId}, "x":${canvas_size}, "y":${canvas_size}}`)
     }
 
     socket.onmessage = (event) => {
-        console.log("event data: " + event.data)
+        // console.log("event data: " + event.data)
+        var game_state = JSON.parse(event.data);
+        counter = game_state["score"];
+        spaceObjects = game_state["asteroids"];
+        rockets = game_state["rockets"];
     }
 
     socket.onclose = () => {
@@ -57,42 +94,6 @@ function disconnect() {
     }
 }
 
-     
-
-/**
- * @author Jake Armendariz
- * */
-//Instance variables
-var startTime = 0;
-var counter = 0;
-var gameStarted = false;
-
-var rockets = []
-var xPos;
-var yPos;
-var aHeight;
-var aWidth;
-var direction = 0;
-var explosion = false;
-var explosionSize;
-var astDestroyed = 0;
-var hitCounter = [];
-var highScore = 0;
-//Increases difficulty
-var speedInc = 0.2;
-var gameSpeed = 0.2;
-var canRestart = true;
-var bullets;
-var bullet;
-var spaceObjects;
-var ave;
-var bigFlame = true;
-var drawAsteroid;
-var drawEndingScreen;
-var starsX;
-var starsY;
-var keys;
-var moving = false;
 //Where to add images and fonts
 function preload() {}
 setup = function() {
@@ -119,42 +120,6 @@ setup = function() {
     this.x = x;
     this.y = y;
   };
-
-  spaceObjects = [
-    {
-      x: random(1, width - 20),
-      y: random(-1, -100),
-      size: random(0.075 * width, 0.175 * width),
-      speed: random(1, 2) + speedInc
-    },
-    // {
-    //   x: random(1, width - 20),
-    //   y: random(-100, -200),
-    //   size: random(0.05 * width, 0.125 * width),
-    //   speed: random(1, 2) + speedInc
-    // },
-    // {
-    //   x: random(1, width - 20),
-    //   y: random(-200, -300),
-    //   size: random(0.07 * width, 0.1125 * width),
-    //   speed: random(1, 3) + speedInc
-    // },
-    // {
-    //   x: random(1, width),
-    //   y: random(-50, -150),
-    //   size: random(0.015 * width, 0.075 * width),
-    //   speed: random(random(1, 2), random(2, 3)) + speedInc
-    // },
-    {
-      x: random(1, width),
-      y: random(-200, -300),
-      size: random(0.0375 * width, 0.075 * width),
-      speed: random(1, 3) + speedInc
-    }
-  ];
-  for (var i = 0; i < spaceObjects.length; i++) {
-    hitCounter[i] = 0;
-  }
 
   keyPressed = function() {
     if (!gameStarted) {
@@ -188,8 +153,6 @@ setup = function() {
       direction = 2;
       moving = true;
     }
-    // socket.emit('light_speed_event', { x: xPos, y: yPos });
-    //             return false;
   };
 };
 
@@ -349,106 +312,24 @@ var drawRocket = function(x, y) {
   }
 };
 
-
-// //This is all for fun
-// var drawRocket = function() {
-//   noStroke();
-//   if (counter % 10) {
-//     bigFlame = !bigFlame;
-//   }
-
-//   fill(220, 220, 220);
-//   rect(xPos, yPos, aWidth, aHeight);
-//   fill(200, 200, 200);
-//   rect(xPos, yPos, aWidth / 6, aHeight);
-//   fill(180, 180, 180);
-//   rect(xPos + aWidth / 3, yPos, (aWidth * 2) / 3, aHeight);
-//   fill(130, 130, 130);
-//   rect(xPos + (aWidth * 2) / 3, yPos, (aWidth * 1) / 3, aHeight);
-
-//   fill(160, 1, 70);
-//   triangle(
-//     xPos,
-//     yPos,
-//     xPos + aWidth / 2,
-//     yPos - aHeight * (7 / 16),
-//     xPos + aWidth,
-//     yPos
-//   );
-//   ellipse(xPos + aWidth / 2, yPos + aHeight * 0.01, aWidth, aHeight * 0.2);
-//   fill(160 + 20, 1 + 20, 70 + 20);
-//   triangle(
-//     xPos,
-//     yPos + aHeight,
-//     xPos - aWidth / 2,
-//     yPos + aHeight,
-//     xPos,
-//     yPos + aHeight / 4
-//   );
-//   fill(160, 1, 70);
-//   triangle(
-//     xPos + (3 / 2) * aWidth,
-//     yPos + aHeight,
-//     xPos + aWidth,
-//     yPos + aHeight,
-//     xPos + aWidth,
-//     yPos + aHeight / 4
-//   );
-
-//   triangle(
-//     xPos + aWidth / 3,
-//     yPos + aHeight,
-//     xPos + aWidth * (2 / 3),
-//     yPos + aHeight,
-//     xPos + aWidth / 2,
-//     yPos + aHeight / 4
-//   );
-
-//   if (bigFlame) {
-//     fill(255, 100, 10);
-//     triangle(
-//       xPos,
-//       yPos + aHeight,
-//       xPos + aWidth,
-//       yPos + aHeight,
-//       xPos + aWidth / 2,
-//       yPos + aHeight * (9 / 6)
-//     );
-//     fill(210, 230, 0);
-//     triangle(
-//       xPos + aWidth / 4,
-//       yPos + aHeight,
-//       xPos + aWidth - aWidth / 4,
-//       yPos + aHeight,
-//       xPos + aWidth / 2,
-//       yPos + aHeight * (8 / 6)
-//     );
-//   } else {
-//     fill(255, 100, 10);
-//     triangle(
-//       xPos,
-//       yPos + aHeight,
-//       xPos + aWidth,
-//       yPos + aHeight,
-//       xPos + aWidth / 2,
-//       yPos + aHeight * (11 / 6)
-//     );
-//     fill(210, 230, 0);
-//     triangle(
-//       xPos + aWidth / 4,
-//       yPos + aHeight,
-//       xPos + aWidth - aWidth / 4,
-//       yPos + aHeight,
-//       xPos + aWidth / 2,
-//       yPos + aHeight * (10 / 6)
-//     );
-//   }
-// };
+var drawOtherRockets = function() {
+    for (var key in rockets) {
+        // check if the property/key is defined in the object itself, not in parent
+        if (rockets.hasOwnProperty(key)) {           
+            drawRocket(rockets[key].x, rockets[key].y);
+        }
+    }
+}
 
 var addShot = function() {
-  var b = new bullet(xPos + aWidth / 2, yPos - aHeight * (1 / 2));
+  let _x = xPos + aWidth / 2;
+  let _y = yPos - aHeight * (1 / 2);
+  var b = new bullet(_x, _y);
   bullets.push(b);
+
+  socket.send(`/shot {"x":${_x}, "y":${_y}}`)
 };
+
 var displayBullets = function() {
   fill(255, 238, 0);
   for (var i = 0; i < bullets.length; i++) {
@@ -465,20 +346,20 @@ var updateBullets = function() {
 //Draws all asteroids at their updated positions. When destroyed they will be shot out of view
 var drawObjects = function() {
   for (var i = 0; i < spaceObjects.length; i++) {
-    if (spaceObjects[i].size > width/7) {
+    if (spaceObjects[i].radius > width/7) {
       fill(255, 238, 0);
       drawSun(
         spaceObjects[i].x,
         spaceObjects[i].y,
-        spaceObjects[i].size * 1.2,
+        spaceObjects[i].radius * 1.2,
         50
       );
-    } else if (spaceObjects[i].size < width/9) {
+    } else if (spaceObjects[i].radius < width/9) {
       fill(140, 138, 140);
       drawAst(
         spaceObjects[i].x,
         spaceObjects[i].y,
-        spaceObjects[i].size * 1.2,
+        spaceObjects[i].radius * 1.2,
         50
       );
     } else {
@@ -486,7 +367,7 @@ var drawObjects = function() {
       drawPlanet(
         spaceObjects[i].x,
         spaceObjects[i].y,
-        spaceObjects[i].size * 1.2,
+        spaceObjects[i].radius * 1.2,
         50
       );
     }
@@ -608,50 +489,50 @@ var updateRocket = function() {
   } else if (yPos < 0) {
     yPos = 0;
   }
-//   if (gameStarted) {
-//     socket.emit('light_speed_event', { x: xPos, y: yPos });
-//                 return false;
-//   }
+  if (gameStarted) {
+     socket.send(`/rocket {"browser_id":${browserId}, "x":${round(xPos)}, "y":${round(yPos)}}`)
+  }
 };
 
-var updateObjects = function() {
-  for (var i = 0; i < spaceObjects.length; i++) {
-    spaceObjects[i].y += spaceObjects[i].speed;
-    if (spaceObjects[i].y > height * 1.15) {
-      spaceObjects[i].y = -50;
-      spaceObjects[i].x = random(0, width);
-      spaceObjects[i].size += random(-10, 15);
-    }
-    if (spaceObjects[i].size < 0.0375 * width) {
-      spaceObjects[i].size = 0.0375 * width;
-    }
-    var d = dist(
-      xPos + aWidth / 2,
-      yPos - aHeight / 2,
-      spaceObjects[i].x,
-      spaceObjects[i].y
-    );
-    if (
-      (spaceObjects[i].x > xPos &&
-        spaceObjects[i].x < xPos + 0.08 * width &&
-        spaceObjects[i].y > yPos &&
-        spaceObjects[i].y < yPos + 0.15 * height) ||
-      d < spaceObjects[i].size / 2
-    ) {
-      explosion = true;
-      startTime = millis();
-    }
-  }
-  //Adds Asteroids to increase difficulty as program continues
-  if (counter % 1000 === 0) {
-    spaceObjects.push({
-      x: random(1, width),
-      y: random(-50, -150),
-      size: random(0.0375 * width, 0.1 * width),
-      speed: random(counter / 1000, counter / 1500 + 2) + speedInc
-    });
-  }
-};
+// var updateObjects = function() {
+//   for (var i = 0; i < spaceObjects.length; i++) {
+//     spaceObjects[i].y += spaceObjects[i].speed;
+//     if (spaceObjects[i].y > height * 1.15) {
+//       spaceObjects[i].y = -50;
+//       spaceObjects[i].x = random(0, width);
+//       spaceObjects[i].size += random(-10, 15);
+//     }
+//     if (spaceObjects[i].size < 0.0375 * width) {
+//       spaceObjects[i].size = 0.0375 * width;
+//     }
+//     var d = dist(
+//       xPos + aWidth / 2,
+//       yPos - aHeight / 2,
+//       spaceObjects[i].x,
+//       spaceObjects[i].y
+//     );
+//     if (
+//       (spaceObjects[i].x > xPos &&
+//         spaceObjects[i].x < xPos + 0.08 * width &&
+//         spaceObjects[i].y > yPos &&
+//         spaceObjects[i].y < yPos + 0.15 * height) ||
+//       d < spaceObjects[i].size / 2
+//     ) {
+//       explosion = true;
+//       startTime = millis();
+//     }
+//   }
+//   //Adds Asteroids to increase difficulty as program continues
+//   if (counter % 1000 === 0) {
+//     spaceObjects.push({
+//       x: random(1, width),
+//       y: random(-50, -150),
+//       size: random(0.0375 * width, 0.1 * width),
+//       speed: random(counter / 1000, counter / 1500 + 2) + speedInc
+//     });
+//   }
+// };
+
 var restart = function() {
   explosionSize = 10;
   explosion = false;
@@ -694,13 +575,15 @@ draw = function() {
 
     drawRocket(xPos, yPos);
   } else if (!explosion) {
+    socket.send(`/state`);
     canRestart = false;
     counter++;
     updateRocket();
-    updateObjects();
+    // updateObjects();
     displayBullets();
     updateBullets();
     drawRocket(xPos, yPos);
+    drawOtherRockets();
     // drawAllRockets();
     drawObjects();
     intersection();

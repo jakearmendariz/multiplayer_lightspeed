@@ -46,7 +46,13 @@ pub struct Asteroid {
 
 impl Asteroid {
     fn update(&mut self) {
-        self.y += self.speed
+        self.y += self.speed;
+        if self.y > 1000 {
+            let mut rng = rand::thread_rng();
+            self.x = rng.gen_range(0, WIDTH);
+            self.y = rng.gen_range(-300, 0);
+            self.radius = rng.gen_range(WIDTH/25, WIDTH/7);
+        }
     }
 }
 
@@ -72,6 +78,7 @@ pub struct GameState {
 impl GameState {
 
     pub fn update(&mut self){
+        self.score += 1;
         for i in 0..self.asteroids.len() {
             self.asteroids[i].update();
         }
@@ -105,8 +112,8 @@ impl GameState {
     pub fn build(&mut self) {  
         let mut rng = rand::thread_rng();
         //creates 5 asteroids above the map to begin with
-        for _ in 0..5 {
-            let radius:i32 = rng.gen_range(WIDTH/30, WIDTH/10);
+        for _ in 0..7 {
+            let radius:i32 = rng.gen_range(WIDTH/25, WIDTH/7);
             let health;
             if radius > WIDTH/7 {
                 health = 3;
@@ -119,7 +126,7 @@ impl GameState {
                 x:rng.gen_range(0, WIDTH),
                 y:rng.gen_range(-1*HEIGHT, -1 *50),
                 radius:radius,
-                speed: rng.gen_range(1,4),
+                speed: rng.gen_range(3,8),
                 health:health
             });
         }
