@@ -1,4 +1,7 @@
 use rand::Rng;
+use rand::distributions::{Normal, Distribution};
+use std::cmp;
+
 use std::collections::HashMap;
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -18,6 +21,11 @@ impl Rocket {
     pub fn update(&mut self, _x:i32, _y:i32){
         self.x = _x;
         self.y = _y;
+    }
+
+    pub fn reset(&mut self){
+        self.x = self.width/2;
+        self.y = (self.height * 3)/4;
     }
 }
 
@@ -48,13 +56,19 @@ impl Asteroid {
     fn update(&mut self) {
         self.y += self.speed;
         if self.y > 1000 {
-            let mut rng = rand::thread_rng();
-            self.x = rng.gen_range(0, WIDTH);
-            self.y = rng.gen_range(-300, 0);
-            self.radius = rng.gen_range(WIDTH/25, WIDTH/7);
+            self.new_asteroid();
         }
     }
 
+    fn new_asteroid(&mut self){
+        let mut rng = rand::thread_rng();
+        self.x = rng.gen_range(0, WIDTH);
+        self.y = rng.gen_range(-300, 0);
+        self.speed = rng.gen_range(3,8);
+        self.set_radius();
+    }
+
+    //health => number of hits before exploding
     fn assign_health(&mut self) {
         if self.radius > WIDTH/7 {
             self.health = 3;
@@ -63,6 +77,16 @@ impl Asteroid {
         }else {
             self.health = 1;
         }
+    }
+
+    fn set_radius(&mut self) {
+        //(mean, standard_deviation)
+        let normal = Normal::new(75.0, 20.0);
+        self.radius = normal.sample(&mut rand::thread_rng()) as i32;
+        //Keep within a range
+        self.radius = cmp::max(WIDTH/24, self.radius);
+        self.radius = cmp::min(WIDTH/6, self.radius);
+        self.assign_health();
     }
 }
 
@@ -88,15 +112,17 @@ pub struct GameState {
 impl GameState {
 
     pub fn update(&mut self){
-        self.score += 1;
-        for i in 0..self.asteroids.len() {
-            self.asteroids[i].update();
-        }
-        for i in 0..self.shots.len() {
-            self.shots[i].update();
-        }
-        if self.score % 10 == 0 {
-            self.collisions();
+        if self.screen == PLAY {
+            self.score += 1;
+            for i in 0..self.asteroids.len() {
+                self.asteroids[i].update();
+            }
+            for i in 0..self.shots.len() {
+                self.shots[i].update();
+            }
+            if self.score % 3 == 0 {
+                self.collisions();
+            }
         }
     }
     //Finds the distance between two points. (For object collision)
@@ -109,17 +135,12 @@ impl GameState {
         for i in 0..self.asteroids.len() {
             let mut delete_index = vec!();
             for j in 0..self.shots.len() {
-                // if self.shots[j].x == self.asteroids[i].x && self.shots[j].y == self.asteroids[i].y {
                 if self.distance(self.shots[j].x, self.shots[j].y, self.asteroids[i].x, self.asteroids[i].y) <= self.asteroids[i].radius/2 {
                     if self.asteroids[i].health > 1 {
                         self.asteroids[i].health -= 1;
                     }else {
-                        self.asteroids[i].x = rng.gen_range(0, WIDTH);
-                        self.asteroids[i].y = rng.gen_range(-300, 0);
-                        self.asteroids[i].radius = rng.gen_range(WIDTH/25, WIDTH/7);
-                        self.asteroids[i].assign_health();
+                        self.asteroids[i].new_asteroid();
                     }
-                    println!("collision");
                     delete_index.push(j);
                 }else if self.shots[j].y < -50 {
                     delete_index.push(j);
@@ -131,36 +152,40 @@ impl GameState {
                 idx -= 1;
                 self.shots.remove(delete_index[idx]);
             }
+            
             for (_id, rocket) in self.rockets.iter() {
-                if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].radius && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius {
-                    //Collision detected, return false for game is over
+                //Collisions
+                let rocket_width = rocket.width/20;
+                if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].radius/2 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius/2 {
                     self.screen = END;
-                    // println!("END GAME")
+                }else if (self.asteroids[i].x - (rocket.x + rocket_width)).abs() < self.asteroids[i].radius/2 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius/2 {
+                    self.screen = END;
                 }
             }
         }
+        if self.screen == END {
+            self.clear_game();
+        }
     }
 
+    fn clear_game(&mut self){
+        println!("game over. clearing objects and shots");
+        self.asteroids = Vec::new();
+        self.shots = Vec::new();
+        self.score = 0;
+    }
     pub fn build(&mut self) {  
-        let mut rng = rand::thread_rng();
-        //creates 5 asteroids above the map to begin with
-        for _ in 0..7 {
-            let radius:i32 = rng.gen_range(WIDTH/25, WIDTH/7);
-            let health;
-            if radius > WIDTH/7 {
-                health = 3;
-            }else if radius > WIDTH/9 {
-                health = 2;
-            }else {
-                health = 1;
-            }
-            self.asteroids.push(Asteroid {
-                x:rng.gen_range(0, WIDTH),
-                y:rng.gen_range(-1*HEIGHT, -1 *50),
-                radius:radius,
-                speed: rng.gen_range(3,8),
-                health:health
-            });
+        //creates 7 asteroids above the map to begin with
+        self.asteroids = Vec::new();
+        self.shots = Vec::new();
+        self.score = 0;
+        for _ in 0..3 {
+            let mut asteroid:Asteroid = Asteroid::default();
+            asteroid.new_asteroid();
+            self.asteroids.push(asteroid);
+        }
+        for (_id, rocket) in self.rockets.iter_mut() {
+            rocket.reset();
         }
         self.screen = PLAY;
     }
@@ -182,16 +207,11 @@ impl GameState {
     }
 
     pub fn _print_state(&self) {
-        println!("Rockets:");
-        for (id, _rocket) in self.rockets.iter() {
-            println!("{}", id);
-        }
-        println!("Shots count: {}", self.shots.len());
-        println!("Asteroids count: {}", self.asteroids.len());
+        println!("Rockets: {}, Shots count: {}, Asteroids count: {}", self.rockets.len(), self.shots.len(), self.asteroids.len());
     }
 
-    pub fn is_playing(&self) -> bool {
-        return self.screen == 1;
+    pub fn _is_playing(&self) -> bool {
+        return self.screen == 1 && self.rockets.len() > 0;
     }
 
     pub fn to_json_string(&self) -> String {

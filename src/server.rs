@@ -4,25 +4,28 @@ use actix_broker::BrokerSubscribe;
 use std::collections::HashMap;
 use std::mem;
 
-use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame, RemovePlayer};
+use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame, RemovePlayer, ResetGame};
 
 type Client = Recipient<ChatMessage>;
 type Room = HashMap<usize, Client>;
-use std::thread;
+
+// use std::thread;
+// use crossbeam::thread;
+
 use crate::lightspeed::{GameState, Rocket, Shot};
-// use std::fs::File;
-// use std::io::prelude::*;
 
-extern crate scoped_threadpool;
-use scoped_threadpool::Pool;
+// extern crate scoped_threadpool;
+// use scoped_threadpool::Pool;
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
+use std::thread::sleep;
 
 
 #[derive(Default)]
 pub struct WsChatServer {
     rooms: HashMap<String, Room>,
-    game_state:GameState
+    game_state:GameState,
+    last_updated:Duration,
 }
 
 impl WsChatServer {
@@ -32,18 +35,20 @@ impl WsChatServer {
         Some(room)
     }
 
-    fn run_game(&mut self) {
-        let mut pool = Pool::new(1);
-        pool.scoped(|_scope| {
+    fn _run_game(&mut self) {
+        // let mut pool = Pool::new(1);
+        // pool::scope(|scope| {
             loop {
-                println!("running game... {}", self.game_state.to_json_string());
+                println!("running game...");
+                self.game_state._print_state();
                 self.game_state.update();
-                thread::sleep(Duration::from_millis(100));
-                if ! self.game_state.is_playing() {
+                // thread::sleep(Duration::from_millis(100));
+                if ! self.game_state._is_playing() {
+                    println!("Game is over. Breaking from threadpool");
                     break;
                 }
             }
-        });
+        // });
     }
 
     fn add_client_to_room(&mut self,room_name: &str,id: Option<usize>,client: Client) -> usize {
@@ -144,11 +149,13 @@ impl Handler<Rocket> for WsChatServer {
 
     fn handle(&mut self, rocket: Rocket, _ctx: &mut Self::Context) {
         if self.game_state.num_players() == 0 {
-            println!("Starting game\n\n\n");
+            println!("Starting game {}\n", rocket.height);
             self.game_state.build();
+            self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
             // self.run_game();
+        }else{
+            self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
         }
-        self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
     }
 }
 
@@ -168,7 +175,6 @@ impl Handler<GetGame> for WsChatServer {
     fn handle(&mut self, _state: GetGame, _ctx: &mut Self::Context) -> Self::Result{
         self.game_state.update();
         let state = self.game_state.to_json_string();
-        // println!("server.rs: Game State: {}", state);
         MessageResult(state)
     }
 }
@@ -180,6 +186,15 @@ impl Handler<RemovePlayer> for WsChatServer {
     fn handle(&mut self, player_to_remove: RemovePlayer, _ctx: &mut Self::Context) -> Self::Result{
         println!("server.rs removed player from game");
         self.game_state.rockets.remove(&player_to_remove.id);
+    }
+}
+
+impl Handler<ResetGame> for WsChatServer {
+    type Result = ();
+
+    fn handle(&mut self, reset: ResetGame, _ctx: &mut Self::Context) -> Self::Result{
+        println!("reset game");
+        self.game_state.build();
     }
 }
 

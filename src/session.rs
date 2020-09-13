@@ -7,7 +7,7 @@ use actix_web_actors::ws;
 
 use serde::{Deserialize, Serialize};
 
-use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame, RemovePlayer};
+use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame, RemovePlayer, ResetGame};
 use crate::server::WsChatServer;
 use crate::lightspeed::{Rocket, Shot};
 
@@ -116,6 +116,11 @@ struct LightspeedConnection {
     y:i32
 }
 
+#[derive(Serialize, Deserialize)]
+struct PlayGame {
+    browser_id:usize,
+}
+
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
     fn handle(
         &mut self,
@@ -214,6 +219,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                             WsChatServer::from_registry().send(RemovePlayer { id:self.id } ).into_actor(self).then(move |_res, _, _ctx| {
                                 fut::ready(())
                             }).wait(ctx);       
+                        }
+                        Some("/play") => {
+                            WsChatServer::from_registry().send(ResetGame()).into_actor(self).then(|_res, _, _ctx| {
+                                fut::ready(())
+                            }).wait(ctx);
                         }
                         Some("/connection") => {
                             println!("new connection to lightspeed");

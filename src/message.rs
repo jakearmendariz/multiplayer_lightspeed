@@ -26,6 +26,10 @@ pub struct GetGame(pub String);
 
 #[derive(Clone, Message)]
 #[rtype(result = "()")]
+pub struct ResetGame();
+
+#[derive(Clone, Message)]
+#[rtype(result = "()")]
 pub struct RemovePlayer {
     pub id:usize
 }

@@ -65,6 +65,14 @@ function connect() {
         spaceObjects = game_state["asteroids"];
         rockets = game_state["rockets"];
         bullets = game_state["shots"];
+        if(game_state["screen"] == 2){
+          explosion = true;
+          startTime = millis();
+        }else if(explosion){
+          if(game_state["screen"] == 1){
+            restart();
+          }
+        }
     }
 
     socket.onclose = () => {
@@ -87,6 +95,7 @@ function disconnect() {
 window.onbeforeunload = function(){
   disconnect();
 }
+
 //Where to add images and fonts
 function preload() {}
 setup = function() {
@@ -257,7 +266,7 @@ var drawOtherRockets = function() {
 }
 
 var addShot = function() {
-  let _x = round(xPos + aWidth / 2);
+  let _x = round(xPos + aWidth / 2) - 3;
   let _y = round(yPos - aHeight * (1 / 2));
   var b = new bullet(_x, _y);
   bullets.push(b);
@@ -268,7 +277,7 @@ var addShot = function() {
 var displayBullets = function() {
   fill(255, 238, 0);
   for (var i = 0; i < bullets.length; i++) {
-    rect(bullets[i].x, bullets[i].y, 0.0075 * height, aHeight / 5);
+    rect(bullets[i].x, bullets[i].y, 6, 20);
   }
 };
 
@@ -276,9 +285,16 @@ var displayBullets = function() {
 var drawObjects = function() {
   fill(65, 72, 163);
   for (var i = 0; i < spaceObjects.length; i++) {
+    if (spaceObjects[i].health == 2) {
+      fill(65, 72, 163);
+    }else if (spaceObjects[i].health == 3) {
+      fill(255, 238, 0);
+    }else  {
+      fill(140, 138, 140);
+    }
     ellipse(spaceObjects[i].x,
         spaceObjects[i].y,
-        spaceObjects[i].radius * 1.2);
+        spaceObjects[i].radius);
 
     // if (spaceObjects[i].radius > width/7) {
     //   fill(255, 238, 0);
@@ -358,6 +374,7 @@ var updateRocket = function() {
 };
 
 var restart = function() {
+  socket.send(`/play`)
   explosionSize = 10;
   explosion = false;
   gameStarted = true;
@@ -365,14 +382,9 @@ var restart = function() {
   xPos = 0.4875 * width;
   yPos = 0.805 * height;
   bullets.splice(0);
-  spaceObjects.splice(5); //Starts with 5 space objects
   astDestroyed = 0;
-  for (var i = 0; i < spaceObjects.length; i++) {
-    spaceObjects[i].y = random(-200, -40);
-    if (spaceObjects[i].size > 0.0875 * width) {
-      spaceObjects[i].size = random(0.0375 * width, 0.1 * width);
-    }
-  }
+  //I need a way of telling the server to restart the game!
+  // socket.send(`/play`)
 };
 
 //Main method of the program
@@ -392,7 +404,6 @@ draw = function() {
     textSize(0.1075 * width);
     textFont("Helvetica");
     textFont("Ubuntu");
-    //textFont("Times new Roman");
     text("LIGHTSPEED", 0.5 * width, 0.3 * height);
     textSize(0.05 * width);
     text("Press any button to begin", 0.5 * width, 0.4 * height);
@@ -424,13 +435,17 @@ draw = function() {
       canRestart = true;
     }
     if (keyIsPressed && canRestart) {
-      restart();
+      console.log("waited:" + millis() - startTime); 
+      // restart();
+      socket.send(`/play`);
     }
   } else {
+    socket.send(`/state`);
     background(255, 180, 0);
     drawEndingScreen();
     if (keyIsPressed) {
-      restart();
+      socket.send(`/play`);
+      // restart();
     }
   }
 };
