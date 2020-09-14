@@ -21,11 +21,16 @@ use std::time::{Duration, Instant};
 use std::thread::sleep;
 
 
+lazy_static! {
+    static ref START_TIME:Instant = Instant::now();
+}
+
+
 #[derive(Default)]
 pub struct WsChatServer {
     rooms: HashMap<String, Room>,
     game_state:GameState,
-    last_updated:Duration,
+    last_updated:u64,
 }
 
 impl WsChatServer {
@@ -173,8 +178,15 @@ impl Handler<GetGame> for WsChatServer {
     type Result = MessageResult<GetGame>;
 
     fn handle(&mut self, _state: GetGame, _ctx: &mut Self::Context) -> Self::Result{
-        self.game_state.update();
         let state = self.game_state.to_json_string();
+        let time_elapsed:u64 = START_TIME.elapsed().as_millis() as u64;
+        if(time_elapsed - self.last_updated > 20){
+            self.game_state.update();
+            self.last_updated = time_elapsed;
+        }
+        // else{
+        //     println!("not updated");
+        // }
         MessageResult(state)
     }
 }
@@ -193,7 +205,6 @@ impl Handler<ResetGame> for WsChatServer {
     type Result = ();
 
     fn handle(&mut self, reset: ResetGame, _ctx: &mut Self::Context) -> Self::Result{
-        println!("reset game");
         self.game_state.build();
     }
 }

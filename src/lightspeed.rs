@@ -38,7 +38,7 @@ pub struct Shot {
 
 impl Shot {
     fn update(&mut self) {
-        self.y -= 5;
+        self.y -= 10;
     }
 }
 
@@ -63,8 +63,8 @@ impl Asteroid {
     fn new_asteroid(&mut self){
         let mut rng = rand::thread_rng();
         self.x = rng.gen_range(0, WIDTH);
-        self.y = rng.gen_range(-300, 0);
-        self.speed = rng.gen_range(3,8);
+        self.y = rng.gen_range(-700, 0);
+        self.speed = rng.gen_range(4, 13);
         self.set_radius();
     }
 
@@ -81,7 +81,7 @@ impl Asteroid {
 
     fn set_radius(&mut self) {
         //(mean, standard_deviation)
-        let normal = Normal::new(75.0, 20.0);
+        let normal = Normal::new(75.0, 33.0);
         self.radius = normal.sample(&mut rand::thread_rng()) as i32;
         //Keep within a range
         self.radius = cmp::max(WIDTH/24, self.radius);
@@ -131,7 +131,12 @@ impl GameState {
     }
 
     fn collisions(&mut self){
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::thread_rng(); 
+        if self.score % 500 == 0 {
+            let mut asteroid:Asteroid = Asteroid::default();
+            asteroid.new_asteroid();
+            self.asteroids.push(asteroid);
+        }
         for i in 0..self.asteroids.len() {
             let mut delete_index = vec!();
             for j in 0..self.shots.len() {
@@ -141,6 +146,7 @@ impl GameState {
                     }else {
                         self.asteroids[i].new_asteroid();
                     }
+                    self.score += 20;
                     delete_index.push(j);
                 }else if self.shots[j].y < -50 {
                     delete_index.push(j);
@@ -179,7 +185,7 @@ impl GameState {
         self.asteroids = Vec::new();
         self.shots = Vec::new();
         self.score = 0;
-        for _ in 0..3 {
+        for _ in 0..7 {
             let mut asteroid:Asteroid = Asteroid::default();
             asteroid.new_asteroid();
             self.asteroids.push(asteroid);

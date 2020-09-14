@@ -330,8 +330,14 @@ var drawObjects = function() {
 drawEndingScreen = function() {
   fill(255, 180, 0);
   textAlign(CENTER);
-  textSize(0.035 * width);
+  textSize(0.08 * width);
   fill(0, 0, 0);
+  text(
+    "Game over",
+    width / 2,
+    Math.round(0.3 * height));
+    textSize(0.05 * width);
+  text("Score " + highScore, width / 2, Math.round(0.4 * height));
 };
 /**
  * updateRocket
@@ -383,6 +389,7 @@ var restart = function() {
   yPos = 0.805 * height;
   bullets.splice(0);
   astDestroyed = 0;
+  highScore = 0;
   //I need a way of telling the server to restart the game!
   // socket.send(`/play`)
 };
@@ -421,6 +428,10 @@ draw = function() {
     textSize(width * 0.03);
     fill(255, 0, 0);
     text(counter, 0.9 * width, 0.08 * height);
+    if (counter > highScore){
+      console.log(highScore)
+      highScore = counter;
+    }
   } else if (explosionSize < ave * 2) {
     drawRocket(xPos, yPos);
     drawObjects();
@@ -445,8 +456,9 @@ draw = function() {
     drawEndingScreen();
     if (keyIsPressed) {
       socket.send(`/play`);
-      // restart();
     }
+    fill(0,0,0);
+    text()
   }
 };
 

@@ -11,6 +11,9 @@ mod lightspeed;
 
 use session::WsChatSession;
 
+#[macro_use]
+extern crate lazy_static;
+
 async fn chat_route(
     req: HttpRequest,
     stream: web::Payload,
