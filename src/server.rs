@@ -117,7 +117,7 @@ impl Handler<JoinRoom> for WsChatServer {
             room_name
         );
 
-        self.send_chat_message(&room_name, &join_msg, id);
+        // self.send_chat_message(&room_name, &join_msg, id);
         MessageResult(id)
     }
 }

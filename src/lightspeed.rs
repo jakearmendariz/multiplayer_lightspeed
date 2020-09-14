@@ -176,7 +176,6 @@ impl GameState {
     }
 
     fn clear_game(&mut self){
-        println!("game over. clearing objects and shots");
         self.asteroids = Vec::new();
         self.shots = Vec::new();
         self.score = 0;

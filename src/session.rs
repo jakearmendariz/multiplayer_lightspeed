@@ -19,7 +19,6 @@ pub struct WsChatSession {
     name: Option<String>,
     width:i32,
     height:i32
-
 }
 
 impl WsChatSession {
@@ -93,7 +92,7 @@ impl Actor for WsChatSession {
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
         info!(
-            "WsChatSession closed for {}({}) in room {}",
+            "Lightspeed closed for {}({}) in room {}",
             self.name.clone().unwrap_or_else(|| "anon".to_string()),
             self.id,
             self.room
@@ -152,9 +151,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                         }
 
                         Some("/name") => {
+                            println!("/name");
                             if let Some(name) = command.next() {
                                 self.name = Some(name.to_owned());
-                                ctx.text(format!("name changed to: {}", name));
+                                println!("saved user: {:?}", self.name);
+                                ctx.text(format!("{{name:{}}}", name));
                             } else {
                                 ctx.text("!!! name is required");
                             }
