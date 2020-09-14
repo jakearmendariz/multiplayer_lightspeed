@@ -25,6 +25,10 @@
   <style>
     body {
       font-family: Ubuntu;
+      /* margin-left:auto;
+      margin-right:auto; */
+      margin:0;
+      display:inline;
     }
     p {
       white-space: pre;
@@ -41,6 +45,14 @@
       color: white;
       text-decoration: underline;
     }
+
+    canvas {
+      display: block;
+      float: center;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom:12px;
+    }
   </style>
   <script>
    
@@ -49,6 +61,6 @@
   <body id = 'game' onload='connect()'>
       <!-- <input placeholder = "Your Name" id = "name"/>
       <button onclick="save_name()" id="send">save</button> -->
-    <div id="id"></div>
+    <span id="id"></span>  num players = <span id="num_players">1</span>
   </body>
 </html>

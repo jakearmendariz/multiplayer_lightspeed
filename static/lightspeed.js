@@ -11,7 +11,7 @@ var startTime = 0;
 var counter = 0;
 var gameStarted = false;
 
-var rockets = {}
+var rockets = {}, num_players = 1;
 var xPos, yPos, aHeight, aWidth;
 var direction = 0;
 var explosion = false, explosionSize;
@@ -48,8 +48,7 @@ function connect() {
     socket.onopen = () => {
         console.log('Connected to ' + wsUri)
         const $id_element = document.querySelector('#id')
-        $id_element.innerHTML = 'id=' + browserId
-        //console.log("Window width" + window.innerWidth + " " + window.innerHeight)
+        $id_element.innerHTML = 'id=' + browserId + " "
         canvas_size = Math.min(window.innerWidth, window.innerHeight);
         socket.send(`/connection {"browser_id":${browserId}, "x":${canvas_size}, "y":${canvas_size}}`)
     }
@@ -74,7 +73,7 @@ function connect() {
     socket.onclose = () => {
         socket.send(`/disconnect {"browser_id":${browserId}, "x":${0}, "y":${0}}`)
         const $id_element = document.querySelector('#id')
-        $id_element.innerHTML = 'disconnected'
+        $id_element.innerHTML = 'disconnected  '
         socket = null
     }
 }
@@ -268,11 +267,10 @@ var drawColoredRocket = function(x, y, r, g, b) {
 
   triangle(x + aWidth / 3,y + aHeight,x + aWidth * (2 / 3),y + aHeight,x + aWidth / 2,y + aHeight / 4);
 
-  fill(255, 100, 10);
-    triangle(x,y + aHeight,x + aWidth,y + aHeight,x + aWidth / 2,y + aHeight * (11 / 6));
-    fill(210, 230, 0);
-    triangle(x + aWidth / 4,y + aHeight,x + aWidth - aWidth / 4,y + aHeight,x + aWidth / 2,y + aHeight * (10 / 6));
-  
+  fill(190, 255, 190);
+  triangle(x,y + aHeight,x + aWidth,y + aHeight,x + aWidth / 2,y + aHeight * (11 / 6));
+  fill(255, 255, 255);
+  triangle(x + aWidth / 4,y + aHeight,x + aWidth - aWidth / 4,y + aHeight,x + aWidth / 2,y + aHeight * (10 / 6));
 };
 
 var drawOtherRockets = function() {
@@ -292,6 +290,10 @@ var drawOtherRockets = function() {
               color_count +=1;
             }
         }
+    }
+    if (num_players != color_count+1) {
+        num_players = color_count+1;
+        document.getElementById("num_players").innerHTML = num_players;
     }
 }
 
