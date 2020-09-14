@@ -10,7 +10,7 @@ type Client = Recipient<ChatMessage>;
 type Room = HashMap<usize, Client>;
 
 use crate::lightspeed::{GameState, Rocket, Shot};
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 
 lazy_static! {
     static ref START_TIME:Instant = Instant::now();
@@ -29,22 +29,6 @@ impl WsChatServer {
         let room = self.rooms.get_mut(room_name)?;
         let room = mem::replace(room, HashMap::new());
         Some(room)
-    }
-
-    fn _run_game(&mut self) {
-        // let mut pool = Pool::new(1);
-        // pool::scope(|scope| {
-            loop {
-                println!("running game...");
-                self.game_state._print_state();
-                self.game_state.update();
-                // thread::sleep(Duration::from_millis(100));
-                if ! self.game_state._is_playing() {
-                    println!("Game is over. Breaking from threadpool");
-                    break;
-                }
-            }
-        // });
     }
 
     fn add_client_to_room(&mut self,room_name: &str,id: Option<usize>,client: Client) -> usize {
@@ -98,11 +82,10 @@ impl Handler<JoinRoom> for WsChatServer {
     type Result = MessageResult<JoinRoom>;
 
     fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
-        println!("server.rs: join room");
         let JoinRoom(room_name, client_name, client) = msg;
 
         let id = self.add_client_to_room(&room_name, None, client);
-        let join_msg = format!(
+        let _join_msg = format!(
             "{} joined {}",
             client_name.unwrap_or_else(|| "anon".to_string()),
             room_name
@@ -145,10 +128,8 @@ impl Handler<Rocket> for WsChatServer {
 
     fn handle(&mut self, rocket: Rocket, _ctx: &mut Self::Context) {
         if self.game_state.num_players() == 0 {
-            println!("Starting game {}\n", rocket.height);
             self.game_state.build();
             self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
-            // self.run_game();
         }else{
             self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
         }
@@ -195,7 +176,7 @@ impl Handler<RemovePlayer> for WsChatServer {
 impl Handler<ResetGame> for WsChatServer {
     type Result = ();
 
-    fn handle(&mut self, reset: ResetGame, _ctx: &mut Self::Context) -> Self::Result{
+    fn handle(&mut self, _: ResetGame, _ctx: &mut Self::Context) -> Self::Result{
         self.game_state.build();
     }
 }

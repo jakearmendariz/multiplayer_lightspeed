@@ -23,7 +23,6 @@ pub struct WsChatSession {
 
 impl WsChatSession {
     pub fn join_room(&mut self, room_name: &str, ctx: &mut ws::WebsocketContext<Self>) {
-        println!("JOIN ROOM");
         let room_name = room_name.to_owned();
 
         // First send a leave message for the current room

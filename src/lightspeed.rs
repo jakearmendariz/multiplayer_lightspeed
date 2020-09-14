@@ -90,12 +90,11 @@ impl Asteroid {
     }
 }
 
-pub const TITLE:u8 = 0;
+pub const _TITLE:u8 = 0;
 pub const PLAY:u8 = 1;
 pub const END:u8 = 2;
 
 pub const WIDTH:i32 = 900;
-pub const HEIGHT:i32 = 900;
 
 //Controls the entire game, will be sent to each of the clients, for them to display
 #[derive(Clone, Message, Default, Serialize, Deserialize)]
