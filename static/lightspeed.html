@@ -178,11 +178,7 @@ function drawSun(xloc, yloc, size, num) {
   const grayvalues = 180 / num;
   const steps = size / num;
   for (let i = 20; i < num; i++) {
-    fill(
-      205 + (i * i * grayvalues) / 2,
-      205 + (i * grayvalues) / 2,
-      i * grayvalues
-    );
+    fill(205 + (i * i * grayvalues) / 2,205 + (i * grayvalues) / 2,i * grayvalues);
     ellipse(xloc, yloc, size - i * steps, size - i * steps);
   }
 }
@@ -285,42 +281,40 @@ var displayBullets = function() {
 var drawObjects = function() {
   fill(65, 72, 163);
   for (var i = 0; i < spaceObjects.length; i++) {
-    if (spaceObjects[i].health == 2) {
-      fill(65, 72, 163);
-    }else if (spaceObjects[i].health == 3) {
-      fill(255, 238, 0);
-    }else  {
-      fill(140, 138, 140);
-    }
-    ellipse(spaceObjects[i].x,
-        spaceObjects[i].y,
-        spaceObjects[i].radius);
-
-    // if (spaceObjects[i].radius > width/7) {
-    //   fill(255, 238, 0);
-    //   drawSun(
-    //     spaceObjects[i].x,
-    //     spaceObjects[i].y,
-    //     spaceObjects[i].radius * 1.2,
-    //     50
-    //   );
-    // } else if (spaceObjects[i].radius < width/9) {
-    //   fill(140, 138, 140);
-    //   drawAst(
-    //     spaceObjects[i].x,
-    //     spaceObjects[i].y,
-    //     spaceObjects[i].radius * 1.2,
-    //     50
-    //   );
-    // } else {
+    // if (spaceObjects[i].health == 2) {
     //   fill(65, 72, 163);
-    //   drawPlanet(
-    //     spaceObjects[i].x,
-    //     spaceObjects[i].y,
-    //     spaceObjects[i].radius * 1.2,
-    //     50
-    //   );
+    // }else if (spaceObjects[i].health == 3) {
+    //   fill(255, 238, 0);
+    // }else  {
+    //   fill(140, 138, 140);
     // }
+    // let radius = spaceObjects[i].radius;
+
+    if (spaceObjects[i].health == 3) {
+      fill(255, 238, 0);
+      drawSun(
+        spaceObjects[i].x,
+        spaceObjects[i].y,
+        spaceObjects[i].radius * 1.7,
+        50
+      );
+    }else if (spaceObjects[i].health == 1) {
+      fill(140, 138, 140);
+      drawAst(
+        spaceObjects[i].x,
+        spaceObjects[i].y,
+        spaceObjects[i].radius * 1.8,
+        50
+      );
+    } else {
+      fill(65, 72, 163);
+      drawPlanet(
+        spaceObjects[i].x,
+        spaceObjects[i].y,
+        spaceObjects[i].radius * 1.8,
+        50
+      );
+    }
   }
 };
 

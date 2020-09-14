@@ -38,7 +38,7 @@ pub struct Shot {
 
 impl Shot {
     fn update(&mut self) {
-        self.y -= 10;
+        self.y -= 15;
     }
 }
 
@@ -64,7 +64,7 @@ impl Asteroid {
         let mut rng = rand::thread_rng();
         self.x = rng.gen_range(0, WIDTH);
         self.y = rng.gen_range(-700, 0);
-        self.speed = rng.gen_range(4, 13);
+        self.speed = rng.gen_range(6, 13);
         self.set_radius();
     }
 
@@ -120,9 +120,10 @@ impl GameState {
             for i in 0..self.shots.len() {
                 self.shots[i].update();
             }
-            if self.score % 3 == 0 {
-                self.collisions();
-            }
+            // if self.score % 3 == 0 {
+            //     self.collisions();
+            // }
+            self.collisions();
         }
     }
     //Finds the distance between two points. (For object collision)
