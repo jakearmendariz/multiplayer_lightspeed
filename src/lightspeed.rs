@@ -1,5 +1,5 @@
 use rand::Rng;
-use rand::distributions::{Normal, Distribution};
+use rand_distr::{Normal, Distribution};
 use std::cmp;
 
 use std::collections::HashMap;
@@ -81,7 +81,7 @@ impl Asteroid {
 
     fn set_radius(&mut self) {
         //(mean, standard_deviation)
-        let normal = Normal::new(75.0, 33.0);
+        let normal = Normal::new(75.0, 33.0).unwrap();
         self.radius = normal.sample(&mut rand::thread_rng()) as i32;
         //Keep within a range
         self.radius = cmp::max(WIDTH/24, self.radius);
@@ -132,7 +132,6 @@ impl GameState {
     }
 
     fn collisions(&mut self){
-        let mut rng = rand::thread_rng(); 
         if self.score % 500 == 0 {
             let mut asteroid:Asteroid = Asteroid::default();
             asteroid.new_asteroid();

@@ -9,17 +9,8 @@ use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, G
 type Client = Recipient<ChatMessage>;
 type Room = HashMap<usize, Client>;
 
-// use std::thread;
-// use crossbeam::thread;
-
 use crate::lightspeed::{GameState, Rocket, Shot};
-
-// extern crate scoped_threadpool;
-// use scoped_threadpool::Pool;
-
 use std::time::{Duration, Instant};
-use std::thread::sleep;
-
 
 lazy_static! {
     static ref START_TIME:Instant = Instant::now();
@@ -180,7 +171,7 @@ impl Handler<GetGame> for WsChatServer {
     fn handle(&mut self, _state: GetGame, _ctx: &mut Self::Context) -> Self::Result{
         let state = self.game_state.to_json_string();
         let time_elapsed:u64 = START_TIME.elapsed().as_millis() as u64;
-        if(time_elapsed - self.last_updated > 20){
+        if time_elapsed - self.last_updated > 20 {
             self.game_state.update();
             self.last_updated = time_elapsed;
         }
