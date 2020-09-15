@@ -156,9 +156,6 @@ impl Handler<GetGame> for WsChatServer {
             self.game_state.update();
             self.last_updated = time_elapsed;
         }
-        // else{
-        //     println!("not updated");
-        // }
         MessageResult(state)
     }
 }

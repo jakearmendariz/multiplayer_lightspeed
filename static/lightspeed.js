@@ -72,7 +72,7 @@ window.onbeforeunload = function(){
 
 setup = function() {
   keys = 1;
-  let canvas_size = Math.min(window.innerWidth, window.innerHeight);
+  let canvas_size = Math.min(window.innerWidth, window.innerHeight) - 30;
   createCanvas(canvas_size, canvas_size);
   background(0, 0, 0);
   explosion_size = 0.025 * canvas_size;

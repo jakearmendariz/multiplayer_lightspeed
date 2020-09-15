@@ -2,8 +2,7 @@
 name = "Lightspeed"
 version = "0.1.0"
 authors = [
-  "Chris Ricketts <chris.ricketts@steribar.com>",
-  "Rob Ede <robjtede@icloud.com>",
+  "Jake Armendariz <jakearmendariz99@gmail.com>"
 ]
 edition = "2018"
 
