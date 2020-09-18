@@ -84,7 +84,8 @@ setup = function() {
   //Rocket Shots
   stars = [];
   for (var i = 0; i < 50; i++) {
-    stars[i] = [random(0, canvas_size),random(0, canvas_size)];
+    let diameter = random(canvas_size * 0.002, canvas_size * 0.005);
+    stars[i] = [random(0, canvas_size),random(0, canvas_size), diameter];
   }
   shots = [];
   shot = function(x, y) 
@@ -186,6 +187,15 @@ var drawRocket = function(x, y) {
   }
 };
 
+
+var update_stars = function() {
+    for (var i = 0; i < stars.length; i++) {
+        stars[i][1] += 1;
+        if(stars[i][1] > height){
+            stars[i][1] = 0;
+        }
+      }
+}
 // Draws rocket at specified location
 var drawColoredRocket = function(x, y, r, g, b) {
   noStroke();
@@ -353,15 +363,17 @@ var restart = function() {
   highscore = 0;
 };
 
+var drawBackground = function() {
+    background(0, 0, 0);
+    for (var i = 0; i < stars.length; i++) {
+        fill(255, 245, 182);
+        ellipse(stars[i][0], stars[i][1], stars[i][2]);
+    }
+}
 //Main method of the program
 draw = function() {
-  background(0, 0, 0);
-  fill(255, 245, 92);
-  let star_diameter = canvas_size * 0.003;
-  for (var i = 0; i < stars.length; i++) {
-    ellipse(stars[i][0], stars[i][1], star_diameter, star_diameter);
-  }
-
+  
+  drawBackground();
   if (!game_started) {
         score++;
         textAlign(CENTER);
@@ -382,6 +394,7 @@ draw = function() {
         drawRocket(x_pos, y_pos);
         drawOtherRockets();
         drawObjects();
+        update_stars();
         textSize(width * 0.03);
         fill(255, 0, 0);
         text(score, 0.9 * width, 0.08 * height);
@@ -413,3 +426,4 @@ draw = function() {
         fill(0,0,0);
   }
 };
+

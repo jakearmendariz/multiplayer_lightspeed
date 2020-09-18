@@ -212,7 +212,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                 }
                                 fut::ready(())
                             }).wait(ctx);           
-
                         }
                         Some("/disconnect") => {
                             println!("Disconnect player to lightspeed");
