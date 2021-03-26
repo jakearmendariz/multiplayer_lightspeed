@@ -39,7 +39,17 @@ function connect() {
         var game_state = JSON.parse(event.data);
         score = game_state["score"];
         space_objects = game_state["asteroids"];
+        for (let i =0; i < space_objects.length; i++) {
+          space_objects[i].x = space_objects[i].x*width;
+          space_objects[i].y = space_objects[i].y*height;
+
+          space_objects[i].radius = space_objects[i].radius*width;
+        }
         rockets = game_state["rockets"];
+        for (let i =0; i < rockets.length; i++) {
+          rockets[i].x = rockets[i].x*width;
+          rockets[i].y = rockets[i].y*height;
+        }
         shots = game_state["shots"];
         if(game_state["screen"] == 2){
           explosion = true;
@@ -154,6 +164,8 @@ var drawRocket = function(x, y) {
   if (score % 10) {
     big_flame = !big_flame;
   }
+  // x*=width;
+  // y*=height;
 
   fill(220, 220, 220);
   rect(x, y, rocket_width, rocket_height);
@@ -241,7 +253,7 @@ var drawOtherRockets = function() {
         if (rockets.hasOwnProperty(key)) {     
             let idx = color_count % 4;
             if(key !== browserId){
-              drawColoredRocket(rockets[key].x, rockets[key].y, colors[idx][0],colors[idx][1],colors[idx][2] );
+              drawColoredRocket(rockets[key].x*width, rockets[key].y*height, colors[idx][0],colors[idx][1],colors[idx][2] );
               color_count +=1;
             }
         }
@@ -258,13 +270,13 @@ var addShot = function() {
   var b = new shot(_x, _y);
   shots.push(b);
 
-  socket.send(`/shot {"browser_id":${browserId},"x":${_x}, "y":${_y}}`)
+  socket.send(`/shot {"browser_id":${browserId},"x":${_x/width}, "y":${_y/height}}`)
 };
 
 var displayshots = function() {
   fill(255, 238, 0);
   for (var i = 0; i < shots.length; i++) {
-    rect(shots[i].x, shots[i].y, 6, 20);
+    rect(shots[i].x*width, shots[i].y*height, 6, 20);
   }
 };
 
@@ -347,7 +359,7 @@ var updateRocket = function() {
     y_pos = 0;
   }
   if (game_started) {
-     socket.send(`/rocket {"browser_id":${browserId}, "x":${round(x_pos)}, "y":${round(y_pos)}}`)
+     socket.send(`/rocket {"browser_id":${browserId}, "x":${x_pos/width}, "y":${y_pos/height}}`)
   }
 };
 
@@ -372,7 +384,6 @@ var drawBackground = function() {
 }
 //Main method of the program
 draw = function() {
-  
   drawBackground();
   if (!game_started) {
         score++;
@@ -389,6 +400,15 @@ draw = function() {
         socket.send(`/state`);
         can_restart = false;
         score++;
+
+        for (let i = 0; i < space_objects.length; i++) {
+          space_objects[i].y += space_objects[i].speed*height;
+        }
+        for (let i = 0; i < shots.length; i++) {
+          shots[i].y -= 0.015;
+        }
+
+        
         updateRocket();
         displayshots();
         drawRocket(x_pos, y_pos);

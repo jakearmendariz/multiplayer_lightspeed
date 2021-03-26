@@ -11,6 +11,7 @@ type Room = HashMap<usize, Client>;
 
 use crate::lightspeed::{GameState, Rocket, Shot};
 use std::time::{Instant};
+use crate::session::{LightspeedConnection};
 
 lazy_static! {
     static ref START_TIME:Instant = Instant::now();
@@ -123,21 +124,16 @@ impl Handler<SendMessage> for WsChatServer {
     }
 }
 
-impl Handler<Rocket> for WsChatServer {
+impl Handler<LightspeedConnection> for WsChatServer {
     type Result = ();
     // TODO
     // Instead of rebuilding the rocket upon every update, we should probably find the rocket and just update its x and y coordinates
-    fn handle(&mut self, rocket: Rocket, _ctx: &mut Self::Context) {
+    fn handle(&mut self, rocket: LightspeedConnection, _ctx: &mut Self::Context) {
         if self.game_state.num_players() == 0 {
             self.game_state.build();
-            let x:i64 = (&rocket.x / rocket.width) * 1000;
-            let y:i64 = (&rocket.y / rocket.height) * 1000;
-            self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
-        }else{
-            let x:i64 = (&rocket.x / self.game_state.rockets[&rocket.id].width) * 1000;
-            let y:i64 = (&rocket.y / self.game_state.rockets[&rocket.id].height) * 1000;
-            self.game_state.rockets.entry(rocket.id).or_insert(Rocket {id:rocket.id, x:rocket.x, y:rocket.y, width:rocket.width, height:rocket.height}).update(rocket.x, rocket.y);
         }
+        self.game_state.rockets.entry(rocket.browser_id).or_insert(Rocket {x:rocket.x, y:rocket.y}).update(rocket.x, rocket.y);
+        
     }
 }
 

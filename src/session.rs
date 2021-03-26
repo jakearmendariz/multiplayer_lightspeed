@@ -107,11 +107,12 @@ impl Handler<ChatMessage> for WsChatSession {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct LightspeedConnection {
-    browser_id:usize,
-    x:i32,
-    y:i32
+#[derive(Copy, Clone, Message, Default, Serialize, Deserialize)]
+#[rtype(result = "()")]
+pub struct LightspeedConnection {
+    pub browser_id:usize,
+    pub x:f32,
+    pub y:f32
 }
 
 #[derive(Serialize, Deserialize)]
@@ -170,13 +171,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                     }
                                 };
                                 //Current session's rocket
-                                let rocket = Rocket {
-                                    id:self.id,
+                                let rocket = LightspeedConnection {
+                                    browser_id:self.id,
                                     x:rocket_json.x,
                                     y:rocket_json.y,
-
-                                    width:self.width,
-                                    height:self.height
                                 };
                                 //Sends updated rocket position
                                 WsChatServer::from_registry().send(rocket).into_actor(self).then(|_res, _, _ctx| {
@@ -236,16 +234,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                                     }
                                 };
                                 self.id = connection.browser_id;
-                                self.width = connection.x;
-                                self.height = connection.y;
                                 //Current session's rocket
-                                let rocket = Rocket {
-                                    id:self.id,
-                                    x:connection.x/2,
-                                    y:connection.y*3/4,
-
-                                    width:self.width,
-                                    height:self.height
+                                let rocket = LightspeedConnection {
+                                    browser_id:self.id,
+                                    x:1.0/2.0,
+                                    y:3.0/4.0,
                                 };
                                 //Sends updated rocket position
                                 WsChatServer::from_registry().send(rocket).into_actor(self).then(|_res, _, _ctx| {
