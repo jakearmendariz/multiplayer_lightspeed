@@ -12,3 +12,6 @@ Shots will only need to be a vector a 2D points
 
 Asteroids will need to be x,y,velocity,width,health
 - These values will maintain the same, except that these values excluding health will be converted to floating point
+
+
+Screen size

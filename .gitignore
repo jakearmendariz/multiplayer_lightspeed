@@ -2,3 +2,5 @@ target/
 state.txt
 static/index.html
 Cargo.lock
+client.js
+client.py

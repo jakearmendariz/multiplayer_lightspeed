@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
 
-const MAX_ASTEROID:i32 = 167;
-const MIN_ASTEROID:i32 = 42;
+const MAX_ASTEROID:i32 = 180;
+const MIN_ASTEROID:i32 = 80;
 
 #[derive(Copy, Clone, Message, Default, Serialize, Deserialize)]
 #[rtype(result = "()")]
@@ -47,7 +47,7 @@ pub struct Asteroid {
     pub health:u8, //Health refers to how many hits it can take. Asteroids start at 1, planets at 2, suns at 3
     x:f32,
     y:f32,
-    radius:f32,
+    diameter:f32,
     speed:f32
 }
 
@@ -64,33 +64,33 @@ impl Asteroid {
         self.x = rng.gen_range(0.0..1.0);
         self.y = rng.gen_range(-0.5..0.0);
         self.speed = rng.gen_range(0.006..0.013);
-        self.set_radius();
+        self.set_diameter();
     }
 
     //health => number of hits before exploding
     fn assign_health(&mut self) {
-        if self.radius > 1.0/7.0 {
+        if self.diameter > 1.0/7.0 {
             self.health = 3;
-        }else if self.radius > 1.0/9.0 {
+        }else if self.diameter > 1.0/9.0 {
             self.health = 2;
         }else {
             self.health = 1;
         }
     }
 
-    fn set_radius(&mut self) {
+    fn set_diameter(&mut self) {
         //(mean, standard_deviation)
         let normal = Normal::new(0.075, 0.033).unwrap();
-        self.radius = normal.sample(&mut rand::thread_rng()) as f32;
-        let temp:i32 = (self.radius*1000.0).round() as i32;
+        self.diameter = normal.sample(&mut rand::thread_rng()) as f32;
+        let temp:i32 = (self.diameter*1000.0).round() as i32;
         //Keep within a range
-        self.radius = (cmp::max(MIN_ASTEROID, temp) as f32)/1000.0;
-        self.radius = (cmp::min(MAX_ASTEROID, temp) as f32)/1000.0;
+        self.diameter = (cmp::max(MIN_ASTEROID, temp) as f32)/1000.0;
+        self.diameter = (cmp::min(MAX_ASTEROID, temp) as f32)/1000.0;
         self.assign_health();
     }
 }
 
-pub const _TITLE:u8 = 0;
+pub const TITLE:u8 = 0;
 pub const PLAY:u8 = 1;
 pub const END:u8 = 2;
 
@@ -111,7 +111,7 @@ pub struct GameState {
     pub _screens:HashMap<usize, Screen>,
     pub shots:Vec<Shot>,
     pub asteroids:Vec<Asteroid>,
-    pub screen:u8
+    pub screen:u8,
 }
 //collisions
 impl GameState {
@@ -145,7 +145,7 @@ impl GameState {
         for i in 0..self.asteroids.len() {
             let mut delete_index = vec!();
             for j in 0..self.shots.len() {
-                if self.distance(self.shots[j].x, self.shots[j].y, self.asteroids[i].x, self.asteroids[i].y) <= self.asteroids[i].radius/2.0 {
+                if self.distance(self.shots[j].x, self.shots[j].y, self.asteroids[i].x, self.asteroids[i].y) <= self.asteroids[i].diameter/2.0 {
                     if self.asteroids[i].health > 1 {
                         self.asteroids[i].health -= 1;
                     }else {
@@ -167,9 +167,9 @@ impl GameState {
             for (_id, rocket) in self.rockets.iter() {
                 //Collisions
                 let rocket_width:f32 = 1.0/17.5;
-                if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].radius/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius/2.0 {
+                if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0 {
                     self.screen = END;
-                }else if (self.asteroids[i].x - (rocket.x + rocket_width)).abs() < self.asteroids[i].radius/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].radius/2.0 {
+                }else if (self.asteroids[i].x - (rocket.x + rocket_width)).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0 {
                     self.screen = END;
                 }
             }

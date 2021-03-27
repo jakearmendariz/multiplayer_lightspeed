@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, GetGame, RemovePlayer, ResetGame};
 use crate::server::WsChatServer;
-use crate::lightspeed::{Rocket, Shot};
+use crate::lightspeed::{Shot};
 
 
 #[derive(Default)]
@@ -17,8 +17,6 @@ pub struct WsChatSession {
     id: usize,
     room: String,
     name: Option<String>,
-    width:i32,
-    height:i32
 }
 
 impl WsChatSession {

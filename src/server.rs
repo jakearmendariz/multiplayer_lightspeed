@@ -9,7 +9,7 @@ use crate::message::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage, G
 type Client = Recipient<ChatMessage>;
 type Room = HashMap<usize, Client>;
 
-use crate::lightspeed::{GameState, Rocket, Shot};
+use crate::lightspeed::{GameState, Rocket, Shot, TITLE};
 use std::time::{Instant};
 use crate::session::{LightspeedConnection};
 
@@ -168,6 +168,9 @@ impl Handler<RemovePlayer> for WsChatServer {
     fn handle(&mut self, player_to_remove: RemovePlayer, _ctx: &mut Self::Context) -> Self::Result{
         println!("server.rs removed player from game");
         self.game_state.rockets.remove(&player_to_remove.id);
+        if self.game_state.rockets.len() == 0 {
+            self.game_state.screen = TITLE
+        }
     }
 }
 

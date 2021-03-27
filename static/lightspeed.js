@@ -12,7 +12,6 @@ var rockets = {}, num_players = 1;
 var x_pos, y_pos, rocket_height, rocket_width;
 var direction = 0;
 var explosion = false, explosion_size;
-var highscore = 0;
 var rocket_speed;
 var can_restart = true;
 var shots, shot, space_objects = [];
@@ -43,7 +42,7 @@ function connect() {
           space_objects[i].x = space_objects[i].x*width;
           space_objects[i].y = space_objects[i].y*height;
 
-          space_objects[i].radius = space_objects[i].radius*width;
+          space_objects[i].diameter = space_objects[i].diameter*width;
         }
         rockets = game_state["rockets"];
         for (let i =0; i < rockets.length; i++) {
@@ -284,20 +283,20 @@ var displayshots = function() {
 var drawObjects = function() {
   fill(65, 72, 163);
   for (var i = 0; i < space_objects.length; i++) {
-    if (space_objects[i].radius > 900/7) {
+    if (space_objects[i].diameter > 900/7) {
       fill(255, 238, 0);
       drawSun(
         space_objects[i].x,
         space_objects[i].y,
-        space_objects[i].radius * 1.7,
+        space_objects[i].diameter * 1.7,
         50
       );
-    }else if (space_objects[i].radius > 900/9) {
+    }else if (space_objects[i].diameter > 900/9) {
       fill(65, 72, 163);
       drawPlanet(
         space_objects[i].x,
         space_objects[i].y,
-        space_objects[i].radius * 1.8,
+        space_objects[i].diameter * 1.8,
         50
       );
     } else {
@@ -305,7 +304,7 @@ var drawObjects = function() {
         drawAsteroid(
           space_objects[i].x,
           space_objects[i].y,
-          space_objects[i].radius * 1.8,
+          space_objects[i].diameter * 1.8,
           50
         );
     }
@@ -322,7 +321,7 @@ var drawEndingScreen = function() {
     width / 2,
     Math.round(0.3 * height));
     textSize(0.05 * width);
-  text("Score " + highscore, width / 2, Math.round(0.4 * height));
+  text("Score " + score, width / 2, Math.round(0.4 * height));
 };
 /**
  * updateRocket
@@ -372,7 +371,6 @@ var restart = function() {
   x_pos = 0.4875 * width;
   y_pos = 0.805 * height;
   shots.splice(0);
-  highscore = 0;
 };
 
 var drawBackground = function() {
@@ -386,7 +384,7 @@ var drawBackground = function() {
 draw = function() {
   drawBackground();
   if (!game_started) {
-        score++;
+        // score++;
         textAlign(CENTER);
         fill(255, 255, 100);
         textSize(0.1075 * width);
@@ -399,7 +397,7 @@ draw = function() {
   } else if (!explosion) {
         socket.send(`/state`);
         can_restart = false;
-        score++;
+        // score++;
 
         for (let i = 0; i < space_objects.length; i++) {
           space_objects[i].y += space_objects[i].speed*height;
@@ -418,9 +416,6 @@ draw = function() {
         textSize(width * 0.03);
         fill(255, 0, 0);
         text(score, 0.9 * width, 0.08 * height);
-    if (score > highscore){
-        highscore = score;
-    }
     } else if (explosion_size < canvas_size * 2) {
         drawRocket(x_pos, y_pos);
         drawObjects();
