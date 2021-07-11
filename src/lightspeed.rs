@@ -112,6 +112,7 @@ pub struct GameState {
     pub shots:Vec<Shot>,
     pub asteroids:Vec<Asteroid>,
     pub screen:u8,
+    pub losing_rocket_id:usize
 }
 //collisions
 impl GameState {
@@ -164,13 +165,13 @@ impl GameState {
                 self.shots.remove(delete_index[idx]);
             }
             
-            for (_id, rocket) in self.rockets.iter() {
+            for (id, rocket) in self.rockets.iter() {
                 //Collisions
                 let rocket_width:f32 = 1.0/17.5;
-                if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0 {
+                if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0 
+                  || (self.asteroids[i].x - (rocket.x + rocket_width)).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0{
                     self.screen = END;
-                }else if (self.asteroids[i].x - (rocket.x + rocket_width)).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0 {
-                    self.screen = END;
+                    self.losing_rocket_id = *id;
                 }
             }
         }
