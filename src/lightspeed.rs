@@ -114,6 +114,14 @@ pub struct GameState {
     pub screen:u8,
     pub losing_rocket_id:usize
 }
+
+fn is_collision(rocket:Rocket, asteroid:Asteroid) -> bool {
+    let rocket_width:f32 = 1.0/17.5;
+    return (asteroid.x - rocket.x).abs() < asteroid.diameter/2.0 && (asteroid.y - rocket.y).abs() < asteroid.diameter/2.0 
+        || (asteroid.x - (rocket.x + rocket_width)).abs() < asteroid.diameter/2.0 && (asteroid.y - rocket.y).abs() < asteroid.diameter/2.0;
+}
+
+
 //collisions
 impl GameState {
 
@@ -142,48 +150,63 @@ impl GameState {
         return (((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1)) as f64).sqrt() as f32;
     }
 
+    fn is_shot_collision(&mut self, i:usize, j:usize) -> bool {
+        return self.distance(self.shots[j].x, self.shots[j].y, self.asteroids[i].x, self.asteroids[i].y) <= self.asteroids[i].diameter/2.0
+    }
+
+    fn asteroid_hit(&mut self, i:usize) {
+        if self.asteroids[i].health > 1 {
+            self.asteroids[i].health -= 1;
+        }else {
+            self.asteroids[i].initialize();
+        }
+        self.score += 20;
+    }
+
     fn collisions(&mut self){
         for i in 0..self.asteroids.len() {
-            let mut delete_index = vec!();
-            for j in 0..self.shots.len() {
-                if self.distance(self.shots[j].x, self.shots[j].y, self.asteroids[i].x, self.asteroids[i].y) <= self.asteroids[i].diameter/2.0 {
-                    if self.asteroids[i].health > 1 {
-                        self.asteroids[i].health -= 1;
-                    }else {
-                        self.asteroids[i].initialize();
-                    }
-                    self.score += 20;
-                    delete_index.push(j);
-                }else if self.shots[j].y < -0.05 {
-                    delete_index.push(j);
-                }
-            } 
-            //Deletes in reverse order as to not fuck up the indexes
-            let mut idx = delete_index.len();
-            while idx > 0 {
-                idx -= 1;
-                self.shots.remove(delete_index[idx]);
+            self.check_bullet_asteroid_collisions(i);
+            self.check_rocket_asteroid_collisions(i);
+            if self.screen == END {
+                return;
             }
-            
-            for (id, rocket) in self.rockets.iter() {
-                //Collisions
-                let rocket_width:f32 = 1.0/17.5;
-                if (self.asteroids[i].x - rocket.x).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0 
-                  || (self.asteroids[i].x - (rocket.x + rocket_width)).abs() < self.asteroids[i].diameter/2.0 && (self.asteroids[i].y - rocket.y).abs() < self.asteroids[i].diameter/2.0{
-                    self.screen = END;
-                    self.losing_rocket_id = *id;
-                }
-            }
-        }
-        if self.screen == END {
-            self.clear_game();
         }
     }
 
+    fn check_bullet_asteroid_collisions(&mut self, i:usize) {
+        let mut shot_count = self.shots.len();
+        let mut j = 0;
+        while j < shot_count {
+            if self.is_shot_collision(i, j) { // did a bullet hit the asteroid
+                self.asteroid_hit(i); // decrease life of the asteroid or reset it
+                self.shots.remove(j);
+                shot_count -= 1;
+            }else if self.shots[j].y < -0.05 { // if the shot is 5 percent out of range, then remove it
+                self.shots.remove(j);
+                shot_count -= 1;
+            }else {
+                j += 1;
+            }
+        
+        } 
+    }
+
+
+    fn check_rocket_asteroid_collisions(&mut self, i:usize) {
+        for (id, rocket) in self.rockets.iter() {
+            //Collisions
+            if is_collision(*rocket, self.asteroids[i]) {
+                self.screen = END;
+                self.losing_rocket_id = *id;
+                self.clear_game();
+                return
+            }
+        }
+    }
     fn clear_game(&mut self){
         self.asteroids = Vec::new();
         self.shots = Vec::new();
-        self.score = 0;
+        // self.score = 0;
     }
     pub fn build(&mut self) {  
         //creates 7 asteroids above the map to begin with
